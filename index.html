@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Office Vibes - Clear Desk Workspace</title>
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="./css/style.css">
 </head>
 <body>
 
@@ -49,7 +49,7 @@
           <button onclick="toggleLamp()" id="lamp-btn">💡 Desk Lamp OFF</button>
         </div>
 
-        <!-- Instagram Follow Button with Official SVG Logo -->
+        <!-- Instagram Follow Button -->
         <a href="https://www.instagram.com/im_jayesh26/" target="_blank" class="ig-link-btn" title="Follow on Instagram">
           <svg class="ig-svg-logo" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
             <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
@@ -58,7 +58,7 @@
         </a>
       </div>
 
-      <!-- Shift Logger & Break Action Controls -->
+      <!-- Shift Logger Controls -->
       <div class="shift-logger">
         <span id="shift-status-tag" class="shift-tag status-out">🔴 OFF SHIFT</span>
         <button id="shift-btn" onclick="toggleShiftLog()">⏰ Log Check-In</button>
@@ -69,19 +69,19 @@
     <!-- CENTER AREA -->
     <main class="desk-center-clear">
       
-      <!-- MAIN PAGE TRANSPARENT WHITE COUNTDOWN CLOCK -->
+      <!-- MAIN PAGE CLOCK -->
       <div id="main-shift-clock" class="main-shift-clock hidden">
         <div class="shift-tag-label">⏳ TIME LEFT TO GO HOME</div>
         <div class="transparent-white-clock" id="countdown-front-text">08:00:00</div>
       </div>
 
-      <!-- REACTION POPUP BANNER WITH BELL NOTIFICATION ICON -->
+      <!-- REACTION POPUP -->
       <div id="reaction-popup" class="reaction-popup hidden">
         <span class="reaction-icon-badge">🔔</span>
         <span id="reaction-text" class="reaction-text"></span>
       </div>
 
-      <!-- Pop-up Laptop Screen Frame -->
+      <!-- Laptop Screen Modal -->
       <div id="laptop-screen-modal" class="laptop-screen-modal hidden">
         <div class="modal-header">
           <span>💻 WORK LAPTOP MONITOR</span>
@@ -92,7 +92,7 @@
         </div>
       </div>
 
-      <!-- Pop-up File Folder Focus Modal -->
+      <!-- File Folder Modal -->
       <div id="folder-files-modal" class="folder-modal hidden">
         <div class="modal-header">
           <span>📁 PROJECT FOCUS DOSSIER</span>
@@ -112,15 +112,15 @@
 
     </main>
 
-    <!-- Background General Corporate Sentences Loop -->
+    <!-- Background Corporate Sentence Loop -->
     <div class="sentence-wrapper">
       <p id="floating-text" class="floating-text"></p>
     </div>
 
-    <!-- Bottom Dock Container -->
+    <!-- Bottom Dock -->
     <div class="bottom-dock-container">
       
-      <!-- CALLOUT POPOVER: ADD CUSTOM PLAYLIST (Points to 📎) -->
+      <!-- CALLOUT: ADD PLAYLIST -->
       <div id="playlist-callout" class="callout-popover playlist-callout hidden">
         <div class="callout-header">
           <span>📎 Attach Custom Playlist</span>
@@ -137,7 +137,7 @@
         <div class="callout-arrow arrow-top-right"></div>
       </div>
 
-      <!-- CALLOUT POPOVER: QUICK MINI GAMES (Points to 🎮) -->
+      <!-- CALLOUT: GAMES -->
       <div id="games-callout" class="callout-popover games-callout hidden">
         <div class="callout-header">
           <span>🎮 Let's Have Some Fun!</span>
@@ -149,7 +149,6 @@
           <button onclick="switchGame('coin')" class="game-nav-btn">🪙 Coin Flip</button>
         </div>
 
-        <!-- GAME 1: TIC TAC TOE -->
         <div id="game-ttt" class="game-panel">
           <div id="ttt-status" class="game-status-text">Your turn (X)</div>
           <div class="ttt-board">
@@ -166,7 +165,6 @@
           <button class="game-reset-btn" onclick="resetTTT()">Restart Game</button>
         </div>
 
-        <!-- GAME 2: COIN FLIP -->
         <div id="game-coin" class="game-panel hidden">
           <div id="coin-result" class="coin-display">🪙</div>
           <button class="game-reset-btn" onclick="flipCoin()">Flip Coin!</button>
@@ -190,12 +188,11 @@
             
             <div class="dock-actions">
               <a id="yt-external-link" href="#" target="_blank" class="icon-btn" title="Open Stream externally">🎵</a>
-              <button class="icon-btn" onclick="toggleStickyNote()" title="Pin Task Goal (Sticky Note)">📌</button>
+              <button class="icon-btn" onclick="toggleStickyNote()" title="Pin Task Goal">📌</button>
               <button class="icon-btn" onclick="togglePlaylistCallout()" title="Attach Custom YouTube Playlist">📎</button>
             </div>
           </div>
 
-          <!-- Progress Bar -->
           <div class="dock-progress">
             <span class="time-text" id="time-current">0:00</span>
             <div class="progress-bar-bg">
@@ -204,7 +201,6 @@
             <span class="time-text" id="time-total">--:--</span>
           </div>
 
-          <!-- Controls + Laptop, File Folder & Games Icons -->
           <div class="dock-controls">
             <button class="icon-btn feature-btn" onclick="toggleLaptop()" title="Open Laptop Video">💻</button>
             <button class="icon-btn feature-btn" onclick="toggleFolderModal()" title="Open Folder & Focus">📁</button>
@@ -222,8 +218,7 @@
 
   </div>
 
-  <!-- YouTube IFrame API -->
   <script src="https://www.youtube.com/iframe_api"></script>
-  <script src="js/app.js"></script>
+  <script src="./js/app.js"></script>
 </body>
 </html>
