@@ -1,61 +1,10 @@
-﻿function syncIframeTrack(index) {
-  const item = playlists[index];
-  if (!item) return;
-  const iframe = document.getElementById('yt-player');
-  if (iframe) {
-    const targetSrc = item.type === 'playlist' 
-      ? `https://www.youtube.com/embed/videoseries?list=${item.id}&enablejsapi=1`
-      : `https://www.youtube.com/embed/${item.id}?enablejsapi=1`;
-    
-    // Only update iframe src if it changed, preventing unnecessary reloads
-    if (!iframe.src.includes(item.id)) {
-      iframe.src = targetSrc;
-    }
-  }
-}
-
-// Loud Audio Overlay for Notifications (Does not interrupt YouTube player)
-function playOverlayNotificationSound() {
-  try {
-    const sound = new Audio('sounds/notification.mp3');
-    sound.volume = 1.0; // Loud volume
-    sound.play().catch(err => console.log('Audio playback waiting for user interaction:', err));
-  } catch (e) {
-    console.log('Notification audio error:', e);
-  }
-}
-
-function triggerAudioPlay() {
-  const iframe = document.getElementById('yt-player');
-  if (player && typeof player.playVideo === 'function') {
-    player.playVideo();
-  } else if (iframe && iframe.contentWindow) {
-    iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
-  }
-  isPlaying = true;
-  const playIcon = document.getElementById('play-icon');
-  if (playIcon) playIcon.innerText = '⏸️';
-}
-
-function triggerAudioPause() {
-  const iframe = document.getElementById('yt-player');
-  if (player && typeof player.pauseVideo === 'function') {
-    player.pauseVideo();
-  } else if (iframe && iframe.contentWindow) {
-    iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
-  }
-  isPlaying = false;
-  const playIcon = document.getElementById('play-icon');
-  if (playIcon) playIcon.innerText = '☕';
-}
-
-const defaultPlaylists = [
+﻿const defaultPlaylists = [
   { id: "qg3X8fKCtZo", title: "Coffee Shop Lo-Fi Flow", dept: "COMMUNICATION & INBOX", url: "https://music.youtube.com/watch?v=qg3X8fKCtZo", icon: "☕", type: "video" },
   { id: "pIvf9bOPXIw", title: "Task 01: Deep Focus Synthwave", dept: "ENGINEERING & TECH", url: "https://music.youtube.com/watch?v=pIvf9bOPXIw", icon: "💻", type: "video" },
   { id: "HLADXoAflHk", title: "Task 03: Chill Ambient Focus", dept: "FINANCE & REPORTING", url: "https://music.youtube.com/watch?v=HLADXoAflHk", icon: "📑", type: "video" }
 ];
 
-// Restore custom playlists from localStorage or default
+// Restore custom tracks from localStorage
 let savedCustomTracks = JSON.parse(localStorage.getItem('officeVibes_customTracks')) || [];
 let playlists = [...defaultPlaylists, ...savedCustomTracks];
 
@@ -101,15 +50,58 @@ const endBreakPool = [
   "bas itna hi break? chalo waapas kaam pe..."
 ];
 
+// State persistence
 let storedIndex = parseInt(localStorage.getItem('officeVibes_trackIndex'));
 let currentIndex = (!isNaN(storedIndex) && storedIndex >= 0 && storedIndex < playlists.length) ? storedIndex : 0;
+
+let checkedIn = localStorage.getItem('officeVibes_checkedIn') === 'true';
+let onBreak = localStorage.getItem('officeVibes_onBreak') === 'true';
+let shiftSecs = parseInt(localStorage.getItem('officeVibes_shiftSecs')) || 0;
+let shiftTimer = null;
+const SHIFT_TOTAL_SECONDS = 8 * 3600;
 
 let player = null;
 let isPlaying = false;
 let progressInterval = null;
 
+// LOUD OVERLAY NOTIFICATION AUDIO
+function playOverlayNotificationSound() {
+  try {
+    const sound = new Audio('sounds/notification.mp3');
+    sound.volume = 1.0;
+    sound.play().catch(err => console.log('Audio overlay blocked until click:', err));
+  } catch (e) {
+    console.log('Notification sound error:', e);
+  }
+}
+
+// AUDIO CONTROLLER FUNCTIONS
+function triggerAudioPlay() {
+  const iframe = document.getElementById('yt-player');
+  if (player && typeof player.playVideo === 'function') {
+    player.playVideo();
+  } else if (iframe && iframe.contentWindow) {
+    iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
+  }
+  isPlaying = true;
+  const playIcon = document.getElementById('play-icon');
+  if (playIcon) playIcon.innerText = '⏸️';
+}
+
+function triggerAudioPause() {
+  const iframe = document.getElementById('yt-player');
+  if (player && typeof player.pauseVideo === 'function') {
+    player.pauseVideo();
+  } else if (iframe && iframe.contentWindow) {
+    iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+  }
+  isPlaying = false;
+  const playIcon = document.getElementById('play-icon');
+  if (playIcon) playIcon.innerText = '☕';
+}
+
 // BACKGROUND SLIDESHOW LOGIC
-let currentBgIndex = -1;
+let currentBgIndex = 0;
 let activeLayer = 1;
 
 function setSpecificBg(imagePath) {
@@ -129,10 +121,6 @@ function setSpecificBg(imagePath) {
 }
 
 function triggerRandomBg() {
-  if (currentBgIndex === -1) {
-    const layer1 = document.getElementById('bg-layer-1');
-    if (layer1) layer1.style.backgroundImage = url('');
-  }
   let nextIndex;
   do {
     nextIndex = Math.floor(Math.random() * bgImages.length);
@@ -275,7 +263,7 @@ function addCustomPlaylist() {
 
   const parsed = parseYouTubeUrl(urlVal);
   if (!parsed) {
-    alert("Invalid YouTube URL format! Please paste a valid YouTube or YouTube Music link.");
+    alert("Invalid YouTube URL format!");
     return;
   }
 
@@ -289,8 +277,6 @@ function addCustomPlaylist() {
   };
 
   playlists.push(newTrack);
-
-  // Save custom tracks to localStorage
   savedCustomTracks.push(newTrack);
   localStorage.setItem('officeVibes_customTracks', JSON.stringify(savedCustomTracks));
 
@@ -311,12 +297,27 @@ function resetPlaylists() {
   alert("Playlists reset to default!");
 }
 
-// UI HYDRATION & TRACK LOADING
+// TRACK SYNC & HYDRATION
+function syncIframeTrack(index) {
+  const item = playlists[index];
+  if (!item) return;
+  const iframe = document.getElementById('yt-player');
+  if (iframe) {
+    const targetSrc = item.type === 'playlist' 
+      ? `https://www.youtube.com/embed/videoseries?list=${item.id}&enablejsapi=1`
+      : `https://www.youtube.com/embed/${item.id}?enablejsapi=1`;
+    
+    if (!iframe.src.includes(item.id)) {
+      iframe.src = targetSrc;
+    }
+  }
+}
+
 function updateDockUI(index) {
-  syncIframeTrack(index);
   currentIndex = index;
   localStorage.setItem('officeVibes_trackIndex', index);
   const item = playlists[index];
+  if (!item) return;
 
   const titleElem = document.getElementById('dock-title');
   const artistElem = document.getElementById('dock-artist');
@@ -327,6 +328,8 @@ function updateDockUI(index) {
   if (artistElem) artistElem.innerText = item.dept;
   if (artBox) artBox.innerText = item.icon;
   if (externalLink) externalLink.href = item.url;
+
+  syncIframeTrack(index);
 }
 
 function loadPlaylist(index) {
@@ -338,15 +341,6 @@ function loadPlaylist(index) {
       player.loadPlaylist({ listType: 'playlist', list: item.id, index: 0, startSeconds: 0 });
     } else {
       player.loadVideoById(item.id);
-    }
-  } else {
-    const iframe = document.getElementById('yt-player');
-    if (iframe) {
-      if (item.type === 'playlist') {
-        iframe.src = `https://www.youtube.com/embed/videoseries?list=${item.id}&enablejsapi=1&autoplay=1`;
-      } else {
-        iframe.src = `https://www.youtube.com/embed/${item.id}?enablejsapi=1&autoplay=1`;
-      }
     }
   }
 }
@@ -417,16 +411,11 @@ function formatTime(sec) {
   return `${m}:${s}`;
 }
 
-// 8 HOUR SHIFT TIMER
-// Shift state persistence across normal refreshes
-let checkedIn = localStorage.getItem('officeVibes_checkedIn') === 'true';
-let onBreak = localStorage.getItem('officeVibes_onBreak') === 'true';
-let shiftSecs = parseInt(localStorage.getItem('officeVibes_shiftSecs')) || 0;
-let shiftTimer = null;
-const SHIFT_TOTAL_SECONDS = 8 * 3600;
-
+// 8 HOUR SHIFT TIMER & PERSISTENCE
 function toggleShiftLog() {
-  checkedIn = !checkedIn; localStorage.setItem('officeVibes_checkedIn', checkedIn);
+  checkedIn = !checkedIn;
+  localStorage.setItem('officeVibes_checkedIn', checkedIn);
+  
   const tag = document.getElementById('shift-status-tag');
   const btn = document.getElementById('shift-btn');
   const breakBtn = document.getElementById('break-btn');
@@ -455,6 +444,8 @@ function toggleShiftLog() {
 
     shiftSecs = 0;
     onBreak = false;
+    localStorage.setItem('officeVibes_shiftSecs', 0);
+    localStorage.setItem('officeVibes_onBreak', false);
     updateShiftClockDisplay();
 
     triggerAudioPause();
@@ -463,7 +454,9 @@ function toggleShiftLog() {
 
 function toggleBreakLog() {
   if (!checkedIn) return;
-  onBreak = !onBreak; localStorage.setItem('officeVibes_onBreak', onBreak);
+  onBreak = !onBreak;
+  localStorage.setItem('officeVibes_onBreak', onBreak);
+  
   const tag = document.getElementById('shift-status-tag');
   const breakBtn = document.getElementById('break-btn');
 
@@ -477,7 +470,6 @@ function toggleBreakLog() {
     
     const endBreakMsg = endBreakPool[Math.floor(Math.random() * endBreakPool.length)];
     showReactionPopup(endBreakMsg, 5000);
-
     triggerAudioPlay();
   }
 }
@@ -486,8 +478,6 @@ function updateShiftLoop() {
   if (onBreak) return;
   shiftSecs++;
   localStorage.setItem('officeVibes_shiftSecs', shiftSecs);
-  if (onBreak) return;
-  shiftSecs++;
   updateShiftClockDisplay();
 
   if (shiftSecs === 28200) {
@@ -551,11 +541,18 @@ function startSentenceCycle() {
   cycle();
 }
 
-// INITIAL DOM HYDRATION
-updateDockUI(currentIndex);
-
+// DOM INITIALIZATION
 document.addEventListener('DOMContentLoaded', () => {
-  // Restore shift timer state on reload if user was checked in
+  // 1. Instantly set first background image to eliminate black screen gap
+  const layer1 = document.getElementById('bg-layer-1');
+  if (layer1) layer1.style.backgroundImage = `url('${bgImages[0]}')`;
+
+  // 2. Hydrate UI track title and iframe
+  updateDockUI(currentIndex);
+  updateShiftClockDisplay();
+  startSentenceCycle();
+
+  // 3. Restore Shift State on refresh
   if (checkedIn) {
     const tag = document.getElementById('shift-status-tag');
     const btn = document.getElementById('shift-btn');
@@ -576,21 +573,14 @@ document.addEventListener('DOMContentLoaded', () => {
       shiftTimer = setInterval(updateShiftLoop, 1000);
     }
   }
-  triggerRandomBg();
-  startSentenceCycle();
-  updateDockUI(currentIndex);
-  updateShiftClockDisplay();
 
+  // 4. Attach Dock Control Listeners
   const playBtn = document.getElementById('dock-play-btn');
   if (playBtn) {
-  playBtn.addEventListener('click', () => {
-    if (isPlaying) {
-      triggerAudioPause();
-    } else {
-      triggerAudioPlay();
-    }
-  });
-}
+    playBtn.addEventListener('click', () => {
+      if (isPlaying) { triggerAudioPause(); } else { triggerAudioPlay(); }
+    });
+  }
 
   const nextBtn = document.getElementById('dock-next-btn');
   if (nextBtn) {
@@ -609,26 +599,5 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-
-
-
-
-
-
-
-// Direct Play/Pause Dock Listener Fix
-document.addEventListener('DOMContentLoaded', () => {
-  const dockPlayBtn = document.getElementById('dock-play-btn');
-  if (dockPlayBtn) {
-    dockPlayBtn.onclick = () => {
-      if (isPlaying) {
-        triggerAudioPause();
-      } else {
-        triggerAudioPlay();
-      }
-    };
-  }
-});
-
+// Immediate track UI hydration at script load
 updateDockUI(currentIndex);
-

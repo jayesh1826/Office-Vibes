@@ -662,3 +662,20 @@ body {
   background: #ffffff !important;
   transform: scale(1.08);
 }
+
+
+/* CHECK-IN BUTTON BUZZ & GLOW ATTENTION ANIMATION */
+@keyframes checkInBuzzGlow {
+  0% { transform: scale(1) translateX(0); box-shadow: 0 0 0 rgba(16, 185, 129, 0); }
+  15% { transform: scale(1.08) translateX(-6px); box-shadow: 0 0 20px rgba(16, 185, 129, 0.8); }
+  30% { transform: scale(1.08) translateX(6px); box-shadow: 0 0 25px rgba(16, 185, 129, 0.9); }
+  45% { transform: scale(1.08) translateX(-4px); box-shadow: 0 0 20px rgba(16, 185, 129, 0.8); }
+  60% { transform: scale(1.08) translateX(4px); box-shadow: 0 0 25px rgba(16, 185, 129, 0.9); }
+  75% { transform: scale(1.05) translateX(-2px); box-shadow: 0 0 15px rgba(16, 185, 129, 0.7); }
+  100% { transform: scale(1) translateX(0); box-shadow: 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+.check-in-attention {
+  animation: checkInBuzzGlow 0.8s ease-in-out !important;
+  border-color: #10b981 !important;
+}
