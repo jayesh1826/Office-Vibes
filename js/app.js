@@ -362,14 +362,15 @@ function formatTime(sec) {
 }
 
 // 8 HOUR SHIFT TIMER
-let checkedIn = false;
-let onBreak = false;
+// Shift state persistence across normal refreshes
+let checkedIn = localStorage.getItem('officeVibes_checkedIn') === 'true';
+let onBreak = localStorage.getItem('officeVibes_onBreak') === 'true';
+let shiftSecs = parseInt(localStorage.getItem('officeVibes_shiftSecs')) || 0;
 let shiftTimer = null;
-let shiftSecs = 0;
 const SHIFT_TOTAL_SECONDS = 8 * 3600;
 
 function toggleShiftLog() {
-  checkedIn = !checkedIn;
+  checkedIn = !checkedIn; localStorage.setItem('officeVibes_checkedIn', checkedIn);
   const tag = document.getElementById('shift-status-tag');
   const btn = document.getElementById('shift-btn');
   const breakBtn = document.getElementById('break-btn');
@@ -406,7 +407,7 @@ function toggleShiftLog() {
 
 function toggleBreakLog() {
   if (!checkedIn) return;
-  onBreak = !onBreak;
+  onBreak = !onBreak; localStorage.setItem('officeVibes_onBreak', onBreak);
   const tag = document.getElementById('shift-status-tag');
   const breakBtn = document.getElementById('break-btn');
 
@@ -426,6 +427,9 @@ function toggleBreakLog() {
 }
 
 function updateShiftLoop() {
+  if (onBreak) return;
+  shiftSecs++;
+  localStorage.setItem('officeVibes_shiftSecs', shiftSecs);
   if (onBreak) return;
   shiftSecs++;
   updateShiftClockDisplay();
@@ -494,6 +498,27 @@ function startSentenceCycle() {
 updateDockUI(currentIndex);
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Restore shift timer state on reload if user was checked in
+  if (checkedIn) {
+    const tag = document.getElementById('shift-status-tag');
+    const btn = document.getElementById('shift-btn');
+    const breakBtn = document.getElementById('break-btn');
+    const clockContainer = document.getElementById('main-shift-clock');
+
+    if (tag) { 
+      tag.innerText = onBreak ? '☕ ON BREAK' : '🟢 ON SHIFT'; 
+      tag.className = onBreak ? 'shift-tag status-break' : 'shift-tag status-in'; 
+    }
+    if (btn) btn.innerText = '⏰ Log Check-Out';
+    if (breakBtn) {
+      breakBtn.classList.remove('hidden');
+      if (onBreak) breakBtn.innerText = '▶️ End Break';
+    }
+    if (clockContainer) clockContainer.classList.remove('hidden');
+    if (!onBreak && !shiftTimer) {
+      shiftTimer = setInterval(updateShiftLoop, 1000);
+    }
+  }
   triggerRandomBg();
   startSentenceCycle();
   updateDockUI(currentIndex);
@@ -523,3 +548,4 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
