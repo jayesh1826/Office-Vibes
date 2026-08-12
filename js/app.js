@@ -642,5 +642,246 @@ document.getElementById('dock-prev-btn').addEventListener('click', () => {
 });
 
 
+// DOSSIER TAB SWITCHING & TRACK SELECTOR LOGIC
+function switchDossierTab(tabName) {
+  const focusTab = document.getElementById('dossier-tab-focus');
+  const tasksTab = document.getElementById('dossier-tab-tasks');
+  const focusBtn = document.getElementById('tab-btn-focus');
+  const tasksBtn = document.getElementById('tab-btn-tasks');
+
+  if (tabName === 'focus') {
+    if (focusTab) {
+      focusTab.style.display = 'block';
+      focusTab.classList.remove('hidden');
+    }
+    if (tasksTab) {
+      tasksTab.style.display = 'none';
+      tasksTab.classList.add('hidden');
+    }
+    if (focusBtn) focusBtn.classList.add('active');
+    if (tasksBtn) tasksBtn.classList.remove('active');
+  } else {
+    if (focusTab) {
+      focusTab.style.display = 'none';
+      focusTab.classList.add('hidden');
+    }
+    if (tasksTab) {
+      tasksTab.style.display = 'block';
+      tasksTab.classList.remove('hidden');
+    }
+    if (focusBtn) focusBtn.classList.remove('active');
+    if (tasksBtn) tasksBtn.classList.add('active');
+    renderDossierTrackList();
+  }
+}
+
+function renderDossierTrackList() {
+  const list = document.getElementById('dossier-track-list');
+  if (!list) return;
+  list.innerHTML = "";
+
+  if (typeof playlists === 'undefined' || !playlists.length) return;
+
+  playlists.forEach((track, idx) => {
+    const li = document.createElement('li');
+    const isCurrent = idx === currentIndex;
+    li.className = `dossier-track-item ${isCurrent ? 'playing' : ''}`;
+    li.innerHTML = `
+      <div class="track-item-info">
+        <span class="track-item-title">${track.icon || '🎵'} ${track.title}</span>
+        <span class="track-item-dept">${track.dept || 'TASK VIBE'}</span>
+      </div>
+      <span class="track-status-icon">${isCurrent ? '▶️ Playing' : '🎧 Select'}</span>
+    `;
+    li.onclick = () => {
+      currentIndex = idx;
+      if (typeof loadPlaylist === 'function') loadPlaylist(idx);
+      if (typeof triggerAudioPlay === 'function') triggerAudioPlay();
+      renderDossierTrackList();
+    };
+    list.appendChild(li);
+  });
+}
+
+// TOGGLE MODAL & INITIALIZE DEFAULT TAB
+function toggleFolderModal() {
+  const modal = document.getElementById('folder-files-modal');
+  if (modal) {
+    modal.classList.toggle('hidden');
+    if (!modal.classList.contains('hidden')) {
+      switchDossierTab('focus'); // Reset to Focus Timer tab on open
+    }
+  }
+}
+
+/*// FOCUS TIMER & COUNTDOWN OVERLAY LOGIC
+let selectedFocusMins = 25;
+let focusRemainingSeconds = 0;
+let focusTimerInterval = null;
+
+function selectPomoTime(mins, btnElem) {
+  selectedFocusMins = mins;
+  const btns = document.querySelectorAll('.pomo-option-btn');
+  btns.forEach(b => b.classList.remove('active'));
+  if (btnElem) btnElem.classList.add('active');
+}
+
+function startFocusSession() {
+  // Clear any running interval
+  if (focusTimerInterval) clearInterval(focusTimerInterval);
+
+  // Set remaining time from selected duration
+  focusRemainingSeconds = selectedFocusMins * 60;
+
+  // Close folder dossier modal
+  const folderModal = document.getElementById('folder-files-modal');
+  if (folderModal) folderModal.classList.add('hidden');
+
+  // Unhide and show the floating timer clock
+  const widget = document.getElementById('focus-overlay-widget');
+  if (widget) widget.classList.remove('hidden');
+
+  updateFocusClockDisplay();
+
+  if (typeof showReactionPopup === 'function') {
+    showReactionPopup(`🎯 Focus Session Started for ${selectedFocusMins} minutes!`, 4000);
+  }
+
+  // Start countdown timer loop
+  focusTimerInterval = setInterval(() => {
+    focusRemainingSeconds--;
+    updateFocusClockDisplay();
+
+    if (focusRemainingSeconds <= 0) {
+      stopFocusSession();
+      if (typeof showReactionPopup === 'function') {
+        showReactionPopup("🎉 Focus Session Finished! Take a break.", 7000);
+      }
+    }
+  }, 1000);
+}
+
+function updateFocusClockDisplay() {
+  const clock = document.getElementById('focus-timer-clock');
+  if (!clock) return;
+  const m = Math.floor(focusRemainingSeconds / 60).toString().padStart(2, '0');
+  const s = (focusRemainingSeconds % 60).toString().padStart(2, '0');
+  clock.innerText = `${m}:${s}`;
+}
+
+function stopFocusSession() {
+  // Stop interval timer
+  if (focusTimerInterval) {
+    clearInterval(focusTimerInterval);
+    focusTimerInterval = null;
+  }
+
+  // Reset timer seconds back to zero
+  focusRemainingSeconds = 0;
+  
+  // Reset clock text to 00:00
+  const clock = document.getElementById('focus-timer-clock');
+  if (clock) clock.innerText = "00:00";
+
+  // Completely hide floating overlay clock widget
+  const widget = document.getElementById('focus-overlay-widget');
+  if (widget) widget.classList.add('hidden');
+} */
+
+let selectedFocusMins = 25;
+let focusTotalSeconds = 25 * 60;
+let focusRemainingSeconds = 0;
+let focusTimerInterval = null;
+let isFocusPaused = false;
+
+const RING_CIRCUMFERENCE = 2 * Math.PI * 85; // 534.07
+
+function selectPomoTime(mins, btnElem) {
+  selectedFocusMins = mins;
+  const btns = document.querySelectorAll('.pomo-option-btn');
+  btns.forEach(b => b.classList.remove('active'));
+  if (btnElem) btnElem.classList.add('active');
+}
+
+function startFocusSession() {
+  if (focusTimerInterval) clearInterval(focusTimerInterval);
+
+  focusTotalSeconds = selectedFocusMins * 60;
+  focusRemainingSeconds = focusTotalSeconds;
+  isFocusPaused = false;
+
+  // Hide Dossier Folder modal if open
+  const folderModal = document.getElementById('folder-files-modal');
+  if (folderModal) folderModal.classList.add('hidden');
+
+  // Open Fullscreen Overlay
+  const overlay = document.getElementById('fullscreen-focus-overlay');
+  if (overlay) overlay.classList.remove('hidden');
+
+  const pauseBtn = document.getElementById('focus-pause-btn');
+  if (pauseBtn) pauseBtn.innerText = "⏸️ Pause";
+
+  updateFocusClockDisplay();
+
+  if (typeof showReactionPopup === 'function') {
+    showReactionPopup(`🎯 Fullscreen Focus Session Started (${selectedFocusMins}m)`, 4000);
+  }
+
+  focusTimerInterval = setInterval(() => {
+    if (!isFocusPaused) {
+      focusRemainingSeconds--;
+      updateFocusClockDisplay();
+
+      if (focusRemainingSeconds <= 0) {
+        stopFocusSession();
+        if (typeof showReactionPopup === 'function') {
+          showReactionPopup("🎉 Deep Focus Session Finished! Take a break.", 7000);
+        }
+      }
+    }
+  }, 1000);
+}
+
+function updateFocusClockDisplay() {
+  const clock = document.getElementById('fullscreen-focus-time');
+  const ring = document.getElementById('focus-ring-progress');
+
+  const m = Math.floor(focusRemainingSeconds / 60).toString().padStart(2, '0');
+  const s = (focusRemainingSeconds % 60).toString().padStart(2, '0');
+  
+  if (clock) clock.innerText = `${m}:${s}`;
+
+  // Update SVG Circle Progress Ring
+  if (ring && focusTotalSeconds > 0) {
+    const fraction = focusRemainingSeconds / focusTotalSeconds;
+    const offset = RING_CIRCUMFERENCE - (fraction * RING_CIRCUMFERENCE);
+    ring.style.strokeDashoffset = offset;
+  }
+}
+
+function togglePauseFocus() {
+  isFocusPaused = !isFocusPaused;
+  const pauseBtn = document.getElementById('focus-pause-btn');
+  if (pauseBtn) {
+    pauseBtn.innerText = isFocusPaused ? "▶️ Resume" : "⏸️ Pause";
+  }
+}
+
+function stopFocusSession() {
+  if (focusTimerInterval) {
+    clearInterval(focusTimerInterval);
+    focusTimerInterval = null;
+  }
+
+  isFocusPaused = false;
+  focusRemainingSeconds = 0;
+
+  const clock = document.getElementById('fullscreen-focus-time');
+  if (clock) clock.innerText = "00:00";
+
+  // Hide Fullscreen Overlay
+  const overlay = document.getElementById('fullscreen-focus-overlay');
+  if (overlay) overlay.classList.add('hidden');
+}
 
 

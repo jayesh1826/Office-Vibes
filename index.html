@@ -92,23 +92,50 @@
         </div>
       </div>
 
-      <!-- File Folder Modal -->
-      <div id="folder-files-modal" class="folder-modal hidden">
-        <div class="modal-header">
-          <span>📁 PROJECT FOCUS DOSSIER</span>
-          <button class="close-modal-btn" onclick="toggleFolderModal()">✕ Close</button>
-        </div>
-        <div class="folder-content">
-          <label>Set Pomodoro Duration:</label>
-          <div class="preset-time-btns">
-            <button onclick="setTimerDuration(15)">15m</button>
-            <button onclick="setTimerDuration(25)" class="active">25m</button>
-            <button onclick="setTimerDuration(50)">50m</button>
-            <button onclick="setTimerDuration(90)">90m</button>
-          </div>
-          <button class="start-focus-btn" onclick="startFocusSession()">🎯 Start Pomodoro</button>
-        </div>
+ <!-- File Folder Modal (2-Tab Dossier) -->
+<div id="folder-files-modal" class="folder-modal dossier-modal hidden">
+  <div class="modal-header">
+    <span>📁 PROJECT FOCUS DOSSIER</span>
+    <button class="close-modal-btn" onclick="toggleFolderModal()">✕ Close</button>
+  </div>
+  
+  <!-- Navigation Tabs -->
+  <div class="dossier-tabs">
+    <button id="tab-btn-focus" class="dossier-tab-btn active" onclick="switchDossierTab('focus')">🎯 Focus Timer</button>
+    <button id="tab-btn-tasks" class="dossier-tab-btn" onclick="switchDossierTab('tasks')">📋 Tasks & Tracks</button>
+  </div>
+
+  <div class="folder-content">
+    <!-- TAB 1: FOCUS TIMER -->
+    <div id="dossier-tab-focus" class="tab-content">
+      <label>Set Pomodoro Duration:</label>
+      <div class="preset-time-btns">
+        <button class="pomo-option-btn" onclick="selectPomoTime(15, this)">15m</button>
+        <button class="pomo-option-btn active" onclick="selectPomoTime(25, this)">25m</button>
+        <button class="pomo-option-btn" onclick="selectPomoTime(50, this)">50m</button>
+        <button class="pomo-option-btn" onclick="selectPomoTime(90, this)">90m</button>
       </div>
+      <button class="start-focus-btn" onclick="startFocusSession()">🎯 Start Pomodoro</button>
+    </div>
+
+    <!-- TAB 2: TASKS & TRACKS -->
+    <div id="dossier-tab-tasks" class="tab-content hidden" style="display: none;">
+      <p class="tab-label">Select Active Task Vibe:</p>
+      <ul id="dossier-track-list" class="dossier-track-list">
+        <!-- Dynamically populated via JS -->
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- FLOATING FOCUS OVERLAY CLOCK -->
+<div id="focus-overlay-widget" class="focus-widget hidden">
+  <div class="focus-widget-inner">
+    <span class="focus-badge">🎯 DEEP FOCUS MODE</span>
+    <div id="focus-timer-clock" class="focus-clock-time">00:00</div>
+    <button class="stop-focus-btn" onclick="stopFocusSession()">Stop Focus</button>
+  </div>
+</div>
 
     </main>
 
@@ -217,9 +244,40 @@
     </div>
 
   </div>
+<!-- FULLSCREEN FOCUS MODE OVERLAY -->
+<div id="fullscreen-focus-overlay" class="fullscreen-focus-overlay hidden">
+  <div class="focus-backdrop-blur"></div>
+  
+  <div class="focus-fullscreen-content">
+    <div class="focus-header">
+      <span class="focus-status-pill">🎯 DEEP FOCUS SESSION ACTIVE</span>
+      <button class="exit-focus-btn" onclick="stopFocusSession()" title="Exit Focus Mode">
+        ✕ Exit Focus
+      </button>
+    </div>
 
+    <!-- Central Clock Display -->
+    <div class="focus-clock-container">
+      <svg class="focus-ring-svg" viewBox="0 0 200 200">
+        <circle class="focus-ring-bg" cx="100" cy="100" r="85"></circle>
+        <circle id="focus-ring-progress" class="focus-ring-fill" cx="100" cy="100" r="85"></circle>
+      </svg>
+      <div class="focus-clock-center">
+        <span id="fullscreen-focus-time" class="fullscreen-clock-digit">25:00</span>
+        <span class="focus-session-subtext">Stay in the zone</span>
+      </div>
+    </div>
+
+    <!-- Bottom Controls -->
+    <div class="focus-footer-controls">
+      <button id="focus-pause-btn" class="focus-action-btn" onclick="togglePauseFocus()">⏸️ Pause</button>
+      <button class="focus-action-btn cancel" onclick="stopFocusSession()">🛑 End Session</button>
+    </div>
+  </div>
+</div>
   <script src="https://www.youtube.com/iframe_api"></script>
   <script src="js/app.js"></script>
+  
 </body>
 </html>
 
