@@ -632,3 +632,33 @@ body {
 }
 
 .lamp-warm-glow { box-shadow: inset 0 0 120px rgba(251, 191, 36, 0.25); }
+
+
+/* TRANSPARENT GLASSMORPHISM PLAYER DOCK OVERRIDES */
+.dock-container {
+  background: rgba(15, 23, 42, 0.45) !important; /* Semi-transparent dark background */
+  backdrop-filter: blur(16px) saturate(180%) !important; /* Frosted glass effect */
+  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important; /* Subtle glowing border */
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37) !important;
+}
+
+.dock-left {
+  background: rgba(30, 41, 59, 0.35) !important; /* Transparent left art container */
+  border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.dock-right {
+  background: transparent !important;
+}
+
+/* Enhancing Play Button Contrast */
+.play-pause-btn {
+  background: rgba(255, 255, 255, 0.9) !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2) !important;
+}
+
+.play-pause-btn:hover {
+  background: #ffffff !important;
+  transform: scale(1.08);
+}
