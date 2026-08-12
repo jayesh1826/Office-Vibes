@@ -64,18 +64,23 @@ let player = null;
 let isPlaying = false;
 let progressInterval = null;
 
+// POMODORO TIMER STATE
+let pomoDurationMinutes = 25;
+let pomoTimerInterval = null;
+let pomoRemainingSeconds = 25 * 60;
+
 // LOUD OVERLAY NOTIFICATION AUDIO
 function playOverlayNotificationSound() {
   try {
     const sound = new Audio('sounds/notification.mp3');
     sound.volume = 1.0;
-    sound.play().catch(err => console.log('Audio overlay blocked until click:', err));
+    sound.play().catch(err => console.log('Audio overlay waiting for user click:', err));
   } catch (e) {
     console.log('Notification sound error:', e);
   }
 }
 
-// AUDIO CONTROLLER FUNCTIONS
+// AUDIO CONTROLLER & PROGRESS TRACKER
 function triggerAudioPlay() {
   const iframe = document.getElementById('yt-player');
   if (player && typeof player.playVideo === 'function') {
@@ -86,6 +91,7 @@ function triggerAudioPlay() {
   isPlaying = true;
   const playIcon = document.getElementById('play-icon');
   if (playIcon) playIcon.innerText = '⏸️';
+  startProgressTracker();
 }
 
 function triggerAudioPause() {
@@ -98,6 +104,62 @@ function triggerAudioPause() {
   isPlaying = false;
   const playIcon = document.getElementById('play-icon');
   if (playIcon) playIcon.innerText = '☕';
+  stopProgressTracker();
+}
+
+function startProgressTracker() {
+  stopProgressTracker();
+  progressInterval = setInterval(() => {
+    if (player && typeof player.getCurrentTime === 'function' && typeof player.getDuration === 'function') {
+      const current = player.getCurrentTime() || 0;
+      const duration = player.getDuration() || 0;
+      if (duration > 0) {
+        const pct = (current / duration) * 100;
+        const fill = document.getElementById('progress-fill');
+        const curTime = document.getElementById('time-current');
+        const totTime = document.getElementById('time-total');
+        
+        if (fill) fill.style.width = `${pct}%`;
+        if (curTime) curTime.innerText = formatTime(current);
+        if (totTime) totTime.innerText = formatTime(duration);
+      }
+    }
+  }, 1000);
+}
+
+function stopProgressTracker() { 
+  if (progressInterval) clearInterval(progressInterval); 
+}
+
+function formatTime(sec) {
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60).toString().padStart(2, '0');
+  return `${m}:${s}`;
+}
+
+// POMODORO DOSSIER LOGIC
+function selectPomoTime(mins, btnElem) {
+  pomoDurationMinutes = mins;
+  pomoRemainingSeconds = mins * 60;
+
+  const allBtns = document.querySelectorAll('.pomo-option-btn, [onclick*="selectPomoTime"]');
+  allBtns.forEach(btn => btn.classList.remove('active'));
+  if (btnElem) btnElem.classList.add('active');
+}
+
+function startPomodoro() {
+  if (pomoTimerInterval) clearInterval(pomoTimerInterval);
+
+  showReactionPopup(`🎯 Pomodoro Started for ${pomoDurationMinutes} minutes! Deep Focus Mode.`, 5000);
+  toggleFolderModal();
+
+  pomoTimerInterval = setInterval(() => {
+    pomoRemainingSeconds--;
+    if (pomoRemainingSeconds <= 0) {
+      clearInterval(pomoTimerInterval);
+      showReactionPopup("🎉 Pomodoro Finished! Take a short 5-minute break.", 7000);
+    }
+  }, 1000);
 }
 
 // BACKGROUND SLIDESHOW LOGIC
@@ -343,6 +405,7 @@ function loadPlaylist(index) {
       player.loadVideoById(item.id);
     }
   }
+  if (checkedIn) triggerAudioPlay();
 }
 
 // YOUTUBE API INTEGRATION
@@ -381,34 +444,6 @@ function onPlayerStateChange(event) {
     if (playIcon) playIcon.innerText = '☕';
     stopProgressTracker();
   }
-}
-
-function startProgressTracker() {
-  stopProgressTracker();
-  progressInterval = setInterval(() => {
-    if (player && player.getCurrentTime && player.getDuration) {
-      const current = player.getCurrentTime();
-      const duration = player.getDuration();
-      if (duration > 0) {
-        const pct = (current / duration) * 100;
-        const fill = document.getElementById('progress-fill');
-        const curTime = document.getElementById('time-current');
-        const totTime = document.getElementById('time-total');
-        
-        if (fill) fill.style.width = `${pct}%`;
-        if (curTime) curTime.innerText = formatTime(current);
-        if (totTime) totTime.innerText = formatTime(duration);
-      }
-    }
-  }, 1000);
-}
-
-function stopProgressTracker() { if (progressInterval) clearInterval(progressInterval); }
-
-function formatTime(sec) {
-  const m = Math.floor(sec / 60);
-  const s = Math.floor(sec % 60).toString().padStart(2, '0');
-  return `${m}:${s}`;
 }
 
 // 8 HOUR SHIFT TIMER & PERSISTENCE
@@ -541,18 +576,15 @@ function startSentenceCycle() {
   cycle();
 }
 
-// DOM INITIALIZATION & ALL CLICK EVENT LISTENERS
+// DOM INITIALIZATION & EVENT BINDINGS
 document.addEventListener('DOMContentLoaded', () => {
-  // 1. Instantly set first background image
   const layer1 = document.getElementById('bg-layer-1');
   if (layer1) layer1.style.backgroundImage = `url('${bgImages[0]}')`;
 
-  // 2. Hydrate UI track title and iframe
   updateDockUI(currentIndex);
   updateShiftClockDisplay();
   startSentenceCycle();
 
-  // 3. Restore Shift State on refresh
   if (checkedIn) {
     const tag = document.getElementById('shift-status-tag');
     const btn = document.getElementById('shift-btn');
@@ -574,7 +606,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // 4. Attach Play / Pause Coffee Button Listener with Check-In Guard
+  // Coffee Play/Pause Button Listener with Check-In Guard
   const playBtn = document.getElementById('dock-play-btn');
   if (playBtn) {
     playBtn.onclick = () => {
@@ -594,7 +626,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-  // 5. Next & Previous Track Listeners
+  // Prev / Next Track Button Listeners
   const nextBtn = document.getElementById('dock-next-btn');
   if (nextBtn) {
     nextBtn.onclick = () => {
@@ -612,5 +644,4 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// Immediate UI Hydration
 updateDockUI(currentIndex);
