@@ -59,7 +59,7 @@ const endBreakPool = [
   "bas itna hi break? chalo waapas kaam pe..."
 ];
 
-let currentIndex = 0;
+let currentIndex = parseInt(localStorage.getItem('officeVibes_trackIndex')) || 0;
 let player = null;
 let isPlaying = false;
 let progressInterval = null;
@@ -555,6 +555,7 @@ function updateDockUI(index) {
 }
 
 function loadPlaylist(index) {
+  localStorage.setItem('officeVibes_trackIndex', index);
   currentIndex = index;
   updateDockUI(index);
   const item = playlists[index];
@@ -609,3 +610,4 @@ document.getElementById('dock-prev-btn').addEventListener('click', () => {
   currentIndex = (currentIndex - 1 + playlists.length) % playlists.length;
   loadPlaylist(currentIndex);
 });
+
