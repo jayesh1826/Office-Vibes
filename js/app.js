@@ -1,4 +1,15 @@
-﻿const defaultPlaylists = [
+﻿// Loud Audio Overlay Function for Text Notifications
+function playOverlayNotificationSound() {
+  try {
+    const sound = new Audio('sounds/notification.mp3');
+    sound.volume = 1.0; // Forced to maximum volume (100%)
+    sound.play().catch(err => console.log('Audio playback blocked until user clicks page:', err));
+  } catch (e) {
+    console.log('Notification audio error:', e);
+  }
+}
+
+const defaultPlaylists = [
   { id: "pIvf9bOPXIw", title: "Task 01: Deep Focus Synthwave", dept: "ENGINEERING & TECH", url: "https://music.youtube.com/watch?v=pIvf9bOPXIw", icon: "💻" },
   { id: "qg3X8fKCtZo", title: "Task 02: Coffee Shop Lo-Fi Flow", dept: "COMMUNICATION & INBOX", url: "https://music.youtube.com/watch?v=qg3X8fKCtZo", icon: "☕" },
   { id: "HLADXoAflHk", title: "Task 03: Chill Ambient Focus", dept: "FINANCE & REPORTING", url: "https://music.youtube.com/watch?v=HLADXoAflHk", icon: "📑" }
@@ -358,6 +369,7 @@ function startFocusSession() {
 let popupTimeout = null;
 
 function showReactionPopup(text, duration = 5000) {
+  playOverlayNotificationSound();
   const popup = document.getElementById('reaction-popup');
   const textElem = document.getElementById('reaction-text');
   if (!popup || !textElem) return;
@@ -596,8 +608,27 @@ function formatTime(sec) {
 }
 
 document.getElementById('dock-play-btn').addEventListener('click', () => {
-  if (!player || !player.playVideo) return;
-  if (isPlaying) { player.pauseVideo(); } else { player.playVideo(); }
+  if (!checkedIn) {
+    const shiftBtn = document.getElementById('shift-btn');
+    if (shiftBtn) {
+      shiftBtn.classList.remove('check-in-attention');
+      void shiftBtn.offsetWidth; // Force DOM reflow to restart animation
+      shiftBtn.classList.add('check-in-attention');
+      setTimeout(() => shiftBtn.classList.remove('check-in-attention'), 850);
+    }
+    if (typeof showReactionPopup === 'function') {
+      showReactionPopup("Check-In first to start your shift vibe! ⏰", 4000);
+    }
+    return;
+  }
+
+  if (isPlaying) { 
+    if (typeof triggerAudioPause === 'function') { triggerAudioPause(); } 
+    else if (player && player.pauseVideo) { player.pauseVideo(); }
+  } else { 
+    if (typeof triggerAudioPlay === 'function') { triggerAudioPlay(); } 
+    else if (player && player.playVideo) { player.playVideo(); }
+  }
 });
 
 document.getElementById('dock-next-btn').addEventListener('click', () => {
@@ -609,3 +640,7 @@ document.getElementById('dock-prev-btn').addEventListener('click', () => {
   currentIndex = (currentIndex - 1 + playlists.length) % playlists.length;
   loadPlaylist(currentIndex);
 });
+
+
+
+
