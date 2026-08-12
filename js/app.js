@@ -1,20 +1,29 @@
 ﻿const defaultPlaylists = [
-  { id: "PL4fGSI1pDJn5RgLW0Sb_zECecWdH_4zOX", title: "Office Vibe Lofi Playlist", dept: "COMMUNICATION & INBOX", url: "https://music.youtube.com/playlist?list=PL4fGSI1pDJn5RgLW0Sb_zECecWdH_4zOX", icon: "☕", type: "playlist" },
-  { id: "pIvf9bOPXIw", title: "Task 01: Deep Focus Synthwave", dept: "ENGINEERING & TECH", url: "https://music.youtube.com/watch?v=pIvf9bOPXIw", icon: "💻", type: "video" },
-  { id: "HLADXoAflHk", title: "Task 03: Chill Ambient Focus", dept: "FINANCE & REPORTING", url: "https://music.youtube.com/watch?v=HLADXoAflHk", icon: "📑", type: "video" }
+  { id: "pIvf9bOPXIw", title: "Task 01: Deep Focus Synthwave", dept: "ENGINEERING & TECH", url: "https://music.youtube.com/watch?v=pIvf9bOPXIw", icon: "💻" },
+  { id: "qg3X8fKCtZo", title: "Task 02: Coffee Shop Lo-Fi Flow", dept: "COMMUNICATION & INBOX", url: "https://music.youtube.com/watch?v=qg3X8fKCtZo", icon: "☕" },
+  { id: "HLADXoAflHk", title: "Task 03: Chill Ambient Focus", dept: "FINANCE & REPORTING", url: "https://music.youtube.com/watch?v=HLADXoAflHk", icon: "📑" }
 ];
 
-// Restore custom tracks from localStorage
-let savedCustomTracks = JSON.parse(localStorage.getItem('officeVibes_customTracks')) || [];
-let playlists = [...defaultPlaylists, ...savedCustomTracks];
+let playlists = [...defaultPlaylists];
+const funIcons = ["💡", "💻", "☕", "🚀", "🎉", "📑", "📊", "🔥", "🎧"];
 
+// General Slideshow Backgrounds Pool (Excludes specific trigger images bg1 (10) & bg1 (8))
 const bgImages = [
   "images/bg1 (1).jpg",
   "images/bg1 (2).jpg",
   "images/bg1 (3).jpg",
   "images/bg1 (4).jpg",
-  "images/bg1 (5).jpg"
+  "images/bg1 (5).jpg",
+  "images/bg1 (6).jpg",
+  "images/bg1 (7).jpg",
+  "images/bg1 (9).jpg",
+  "images/bg1 (11).jpg",
+  "images/bg1 (12).jpg"
 ];
+
+// Special Trigger Backgrounds
+const bgCheckIn = "images/bg1 (10).jpg";
+const bgNearEnd = "images/bg1 (8).jpg";
 
 const corporateSentences = [
   "Iss topic pe thoda aur deep dive karna padega.",
@@ -39,7 +48,6 @@ const corporateSentences = [
   "Chalo, 5 min pehle meeting khatam karte hain, aapko 5 min waapas deta hoon."
 ];
 
-// Expanded Office Milestone Reaction Pools
 const checkInPool = [
   "in last to aa gaye aap...",
   "aaj toh time pe aaye ho, kya baat hai!",
@@ -51,42 +59,32 @@ const endBreakPool = [
   "bas itna hi break? chalo waapas kaam pe..."
 ];
 
-const officeTasks = [
-  { title: "Task 01: Draft Q3 Client Email", dept: "COMMUNICATION & INBOX" },
-  { title: "Task 02: Review Excel Financial Sheets", dept: "FINANCE & REPORTING" },
-  { title: "Task 03: Debug Critical Blocker Bug", dept: "ENGINEERING & TECH" },
-  { title: "Task 04: Prepare Deck for 3 PM Meeting", dept: "STRATEGY & PRESENTATION" },
-  { title: "Task 05: Clean Up Shared Google Drive", dept: "OPERATIONS & ADMIN" }
-];
-
-// State persistence
-let storedIndex = parseInt(localStorage.getItem('officeVibes_trackIndex'));
-let currentIndex = (!isNaN(storedIndex) && storedIndex >= 0 && storedIndex < playlists.length) ? storedIndex : 0;
-
-let checkedIn = localStorage.getItem('officeVibes_checkedIn') === 'true';
-let onBreak = localStorage.getItem('officeVibes_onBreak') === 'true';
-let shiftSecs = parseInt(localStorage.getItem('officeVibes_shiftSecs')) || 0;
-let shiftTimer = null;
-const SHIFT_TOTAL_SECONDS = 8 * 3600; // 8 Hours
-
+let currentIndex = 0;
 let player = null;
 let isPlaying = false;
 let progressInterval = null;
 
-// LOUD OVERLAY NOTIFICATION AUDIO
-function playOverlayNotificationSound() {
-  try {
-    const sound = new Audio('sounds/notification.mp3');
-    sound.volume = 1.0;
-    sound.play().catch(err => console.log('Audio overlay blocked until click:', err));
-  } catch (e) {
-    console.log('Notification sound error:', e);
-  }
-}
-
-// BACKGROUND SLIDESHOW
+// BACKGROUND SLIDESHOW LOGIC
 let currentBgIndex = -1;
 let activeLayer = 1;
+
+function setSpecificBg(imagePath) {
+  const newBgUrl = `url('${imagePath}')`;
+  const layer1 = document.getElementById('bg-layer-1');
+  const layer2 = document.getElementById('bg-layer-2');
+
+  if (activeLayer === 1) {
+    layer2.style.backgroundImage = newBgUrl;
+    layer2.style.opacity = '1';
+    layer1.style.opacity = '0';
+    activeLayer = 2;
+  } else {
+    layer1.style.backgroundImage = newBgUrl;
+    layer1.style.opacity = '1';
+    layer2.style.opacity = '0';
+    activeLayer = 1;
+  }
+}
 
 function triggerRandomBg() {
   let nextIndex;
@@ -95,68 +93,28 @@ function triggerRandomBg() {
   } while (nextIndex === currentBgIndex && bgImages.length > 1);
 
   currentBgIndex = nextIndex;
-  const newBgUrl = `url('${bgImages[currentBgIndex]}')`;
-
-  const layer1 = document.getElementById('bg-layer-1');
-  const layer2 = document.getElementById('bg-layer-2');
-
-  if (activeLayer === 1) {
-    if (layer2) { layer2.style.backgroundImage = newBgUrl; layer2.style.opacity = '1'; }
-    if (layer1) layer1.style.opacity = '0';
-    activeLayer = 2;
-  } else {
-    if (layer1) { layer1.style.backgroundImage = newBgUrl; layer1.style.opacity = '1'; }
-    if (layer2) layer2.style.opacity = '0';
-    activeLayer = 1;
-  }
+  setSpecificBg(bgImages[currentBgIndex]);
 }
+
 setInterval(triggerRandomBg, 12000);
 
-// LAPTOP, FOLDER, STICKY & CALLOUT MODAL TOGGLES
-function toggleLaptop() {
-  const modal = document.getElementById('laptop-screen-modal');
-  if (modal) modal.classList.toggle('hidden');
-}
-
-function toggleFolderModal() {
-  const modal = document.getElementById('folder-files-modal');
-  if (modal) modal.classList.toggle('hidden');
-}
-
-function closeFolderModal() {
-  toggleFolderModal();
-}
+// STICKY NOTE LOGIC
+let stickyGoals = ["Review Q3 Deliverables", "Send status update email"];
 
 function toggleStickyNote() {
-  const elem = document.getElementById('sticky-note');
-  if (elem) elem.classList.toggle('hidden');
+  document.getElementById('sticky-note').classList.toggle('hidden');
   renderStickyGoals();
 }
 
-function togglePlaylistCallout() {
-  const games = document.getElementById('games-callout');
-  const playlist = document.getElementById('playlist-callout');
-  if (games) games.classList.add('hidden');
-  if (playlist) playlist.classList.toggle('hidden');
-}
-
-function toggleGamesCallout() {
-  const playlist = document.getElementById('playlist-callout');
-  const games = document.getElementById('games-callout');
-  if (playlist) playlist.classList.add('hidden');
-  if (games) games.classList.toggle('hidden');
-}
-
-// STICKY NOTE GOALS LOGIC
-let stickyGoals = ["Review Q3 Deliverables", "Send status update email"];
-
 function handleStickyKeyPress(event) {
-  if (event.key === 'Enter') addStickyGoal();
+  if (event.key === 'Enter') {
+    addStickyGoal();
+  }
 }
 
 function addStickyGoal() {
   const input = document.getElementById('sticky-input');
-  const val = input ? input.value.trim() : "";
+  const val = input.value.trim();
   if (val) {
     stickyGoals.push(val);
     input.value = "";
@@ -171,12 +129,11 @@ function deleteStickyGoal(idx) {
 
 function toggleCompleteGoal(idx, elem) {
   const item = elem.closest('.sticky-item');
-  if (item) item.classList.toggle('completed');
+  item.classList.toggle('completed');
 }
 
 function renderStickyGoals() {
   const list = document.getElementById('sticky-list');
-  if (!list) return;
   list.innerHTML = "";
   stickyGoals.forEach((goal, idx) => {
     const li = document.createElement('li');
@@ -192,47 +149,215 @@ function renderStickyGoals() {
   });
 }
 
-// POMODORO FOCUS DURATION
-let durationMinutes = 25;
-let pomoTimerInterval = null;
-let pomoRemainingSeconds = 25 * 60;
-
-function setTimerDuration(mins) {
-  durationMinutes = mins;
-  pomoRemainingSeconds = mins * 60;
-  const btns = document.querySelectorAll('.preset-time-btns button, .pomo-option-btn');
-  btns.forEach(b => b.classList.remove('active'));
-  if (event && event.target) event.target.classList.add('active');
+// CALLOUT & MODAL TOGGLES
+function toggleLaptop() {
+  document.getElementById('laptop-screen-modal').classList.toggle('hidden');
 }
 
-function selectPomoTime(mins, btnElem) {
-  setTimerDuration(mins);
-  if (btnElem) btnElem.classList.add('active');
+function toggleFolderModal() {
+  document.getElementById('folder-files-modal').classList.toggle('hidden');
+}
+
+function togglePlaylistCallout() {
+  document.getElementById('games-callout').classList.add('hidden');
+  document.getElementById('playlist-callout').classList.toggle('hidden');
+}
+
+function toggleGamesCallout() {
+  document.getElementById('playlist-callout').classList.add('hidden');
+  document.getElementById('games-callout').classList.toggle('hidden');
+}
+
+// LAMP TOGGLE
+let lampOn = false;
+function toggleLamp() {
+  lampOn = !lampOn;
+  const btn = document.getElementById('lamp-btn');
+  const artContainer = document.querySelector('.dock-art');
+  const artBox = document.getElementById('art-box');
+
+  const randomIcon = funIcons[Math.floor(Math.random() * funIcons.length)];
+  artBox.innerText = randomIcon;
+
+  artBox.classList.add('pop-anim');
+  setTimeout(() => artBox.classList.remove('pop-anim'), 300);
+
+  if (lampOn) {
+    document.body.classList.add('lamp-warm-glow');
+    artContainer.classList.add('flashlight-active');
+    btn.innerText = '💡 Desk Lamp ON';
+  } else {
+    document.body.classList.remove('lamp-warm-glow');
+    artContainer.classList.remove('flashlight-active');
+    btn.innerText = '💡 Desk Lamp OFF';
+  }
+}
+
+// CUSTOM PLAYLIST MANAGER
+function parseYouTubeUrl(url) {
+  const playlistMatch = url.match(/[?&]list=([^#\&\?]+)/);
+  if (playlistMatch && playlistMatch[1]) {
+    return { type: 'playlist', id: playlistMatch[1] };
+  }
+
+  const videoMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|shorts\/)|music\.youtube\.com\/watch\?v=)([^#\&\?]{11})/);
+  if (videoMatch && videoMatch[1]) {
+    return { type: 'video', id: videoMatch[1] };
+  }
+
+  return null;
+}
+
+function addCustomPlaylist() {
+  const titleInput = document.getElementById('custom-task-name').value.trim();
+  const urlInput = document.getElementById('custom-yt-url').value.trim();
+
+  if (!titleInput || !urlInput) {
+    alert("Please provide both a Vibe name and a YouTube link.");
+    return;
+  }
+
+  const parsed = parseYouTubeUrl(urlInput);
+  if (!parsed) {
+    alert("Invalid YouTube link format!");
+    return;
+  }
+
+  const newTrack = {
+    id: parsed.id,
+    type: parsed.type,
+    title: titleInput,
+    dept: parsed.type === 'playlist' ? "CUSTOM ALBUM" : "USER VIBE",
+    url: urlInput,
+    icon: parsed.type === 'playlist' ? "🎶" : "🎵"
+  };
+
+  playlists.push(newTrack);
+  togglePlaylistCallout();
+
+  document.getElementById('custom-task-name').value = "";
+  document.getElementById('custom-yt-url').value = "";
+
+  loadPlaylist(playlists.length - 1);
+  alert(`"${titleInput}" added!`);
+}
+
+function resetPlaylists() {
+  playlists = [...defaultPlaylists];
+  togglePlaylistCallout();
+  loadPlaylist(0);
+  alert("Playlists reset!");
+}
+
+// QUICK MINI GAMES LOGIC
+function switchGame(gameType) {
+  const btns = document.querySelectorAll('.game-nav-btn');
+  btns.forEach(b => b.classList.remove('active'));
+
+  document.getElementById('game-ttt').classList.add('hidden');
+  document.getElementById('game-coin').classList.add('hidden');
+
+  if (gameType === 'ttt') {
+    btns[0].classList.add('active');
+    document.getElementById('game-ttt').classList.remove('hidden');
+  } else if (gameType === 'coin') {
+    btns[1].classList.add('active');
+    document.getElementById('game-coin').classList.remove('hidden');
+  }
+}
+
+// TIC-TAC-TOE VS AI
+let tttBoard = ["", "", "", "", "", "", "", "", ""];
+let tttActive = true;
+
+function makeMove(index) {
+  if (tttBoard[index] !== "" || !tttActive) return;
+
+  tttBoard[index] = "X";
+  renderTTT();
+
+  if (checkTTTWin("X")) {
+    document.getElementById('ttt-status').innerText = "🎉 You Won!";
+    tttActive = false;
+    return;
+  }
+
+  if (tttBoard.every(cell => cell !== "")) {
+    document.getElementById('ttt-status').innerText = "🤝 It's a Draw!";
+    tttActive = false;
+    return;
+  }
+
+  document.getElementById('ttt-status').innerText = "AI thinking...";
+  setTimeout(() => {
+    let emptyIndices = tttBoard.map((val, idx) => cellVal(val, idx)).filter(val => val !== null);
+    if (emptyIndices.length > 0) {
+      let aiChoice = emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
+      tttBoard[aiChoice] = "O";
+      renderTTT();
+
+      if (checkTTTWin("O")) {
+        document.getElementById('ttt-status').innerText = "💻 AI Won!";
+        tttActive = false;
+      } else {
+        document.getElementById('ttt-status').innerText = "Your turn (X)";
+      }
+    }
+  }, 400);
+}
+
+function cellVal(val, idx) { return val === "" ? idx : null; }
+
+function renderTTT() {
+  const cells = document.querySelectorAll('.ttt-cell');
+  cells.forEach((cell, idx) => {
+    cell.innerText = tttBoard[idx];
+  });
+}
+
+function checkTTTWin(playerSymbol) {
+  const wins = [
+    [0,1,2], [3,4,5], [6,7,8],
+    [0,3,6], [1,4,7], [2,5,8],
+    [0,4,8], [2,4,6]
+  ];
+  return wins.some(combo => combo.every(idx => tttBoard[idx] === playerSymbol));
+}
+
+function resetTTT() {
+  tttBoard = ["", "", "", "", "", "", "", "", ""];
+  tttActive = true;
+  document.getElementById('ttt-status').innerText = "Your turn (X)";
+  renderTTT();
+}
+
+function flipCoin() {
+  const resultElem = document.getElementById('coin-result');
+  resultElem.innerText = "🌀";
+  setTimeout(() => {
+    const outcome = Math.random() > 0.5 ? "👑 Heads" : "🦅 Tails";
+    resultElem.innerText = outcome;
+  }, 500);
+}
+
+// POMODORO FOCUS DURATION
+let durationMinutes = 25;
+function setTimerDuration(mins) {
+  durationMinutes = mins;
+  const btns = document.querySelectorAll('.preset-time-btns button');
+  btns.forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
 }
 
 function startFocusSession() {
-  if (pomoTimerInterval) clearInterval(pomoTimerInterval);
   toggleFolderModal();
-  showReactionPopup(`🎯 Pomodoro set for ${durationMinutes} minutes! Focus time started.`, 5000);
-
-  pomoTimerInterval = setInterval(() => {
-    pomoRemainingSeconds--;
-    if (pomoRemainingSeconds <= 0) {
-      clearInterval(pomoTimerInterval);
-      showReactionPopup("🎉 Pomodoro Finished! Time for a break.", 7000);
-    }
-  }, 1000);
-}
-
-function startPomodoro() {
-  startFocusSession();
+  alert(`Pomodoro timer set for ${durationMinutes} minutes! Focus time started.`);
 }
 
 // REACTION POPUP LOGIC
 let popupTimeout = null;
 
 function showReactionPopup(text, duration = 5000) {
-  playOverlayNotificationSound();
   const popup = document.getElementById('reaction-popup');
   const textElem = document.getElementById('reaction-text');
   if (!popup || !textElem) return;
@@ -246,94 +371,72 @@ function showReactionPopup(text, duration = 5000) {
   }, duration);
 }
 
-// AUDIO CONTROLLER FUNCTIONS
-function triggerAudioPlay() {
-  const iframe = document.getElementById('yt-player');
-  if (player && typeof player.playVideo === 'function') {
-    player.playVideo();
-  } else if (iframe && iframe.contentWindow) {
-    iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
-  }
-  isPlaying = true;
-  const playIcon = document.getElementById('play-icon');
-  if (playIcon) playIcon.innerText = '⏸️';
-  startProgressTracker();
-}
-
-function triggerAudioPause() {
-  const iframe = document.getElementById('yt-player');
-  if (player && typeof player.pauseVideo === 'function') {
-    player.pauseVideo();
-  } else if (iframe && iframe.contentWindow) {
-    iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
-  }
-  isPlaying = false;
-  const playIcon = document.getElementById('play-icon');
-  if (playIcon) playIcon.innerText = '☕';
-  stopProgressTracker();
-}
-
 // MAIN PAGE TRANSPARENT WHITE COUNTDOWN CLOCK & MILESTONES
+let checkedIn = false;
+let onBreak = false;
+let shiftTimer = null;
+let shiftSecs = 0;
+const SHIFT_TOTAL_SECONDS = 8 * 3600;
+
 function toggleShiftLog() {
   checkedIn = !checkedIn;
-  localStorage.setItem('officeVibes_checkedIn', checkedIn);
-
   const tag = document.getElementById('shift-status-tag');
   const btn = document.getElementById('shift-btn');
   const breakBtn = document.getElementById('break-btn');
   const clockContainer = document.getElementById('main-shift-clock');
 
   if (checkedIn) {
-    if (tag) { tag.innerText = '🟢 ON SHIFT'; tag.className = 'shift-tag status-in'; }
-    if (btn) btn.innerText = '⏰ Log Check-Out';
-    if (breakBtn) breakBtn.classList.remove('hidden');
-    if (clockContainer) clockContainer.classList.remove('hidden');
+    tag.innerText = '🟢 ON SHIFT';
+    tag.className = 'shift-tag status-in';
+    btn.innerText = '⏰ Log Check-Out';
+    breakBtn.classList.remove('hidden');
+    clockContainer.classList.remove('hidden');
 
-    // Trigger Random Check-In Reaction Popup
+    // Rule: Set bg1 (10).jpg as background on Check-In
+    setSpecificBg(bgCheckIn);
+
     const checkInMsg = checkInPool[Math.floor(Math.random() * checkInPool.length)];
     showReactionPopup(checkInMsg, 5000);
 
-    triggerAudioPlay();
+    if (player && player.playVideo) player.playVideo();
+
     if (shiftTimer) clearInterval(shiftTimer);
     shiftTimer = setInterval(updateShiftLoop, 1000);
   } else {
-    if (tag) { tag.innerText = '🔴 OFF SHIFT'; tag.className = 'shift-tag status-out'; }
-    if (btn) btn.innerText = '⏰ Log Check-In';
-    if (breakBtn) breakBtn.classList.add('hidden');
-    if (clockContainer) clockContainer.classList.add('hidden');
+    tag.innerText = '🔴 OFF SHIFT';
+    tag.className = 'shift-tag status-out';
+    btn.innerText = '⏰ Log Check-In';
+    breakBtn.classList.add('hidden');
+    clockContainer.classList.add('hidden');
     if (shiftTimer) clearInterval(shiftTimer);
 
     shiftSecs = 0;
     onBreak = false;
-    localStorage.setItem('officeVibes_shiftSecs', 0);
-    localStorage.setItem('officeVibes_onBreak', false);
-    updateShiftClockDisplay();
 
-    triggerAudioPause();
+    if (player && player.pauseVideo) player.pauseVideo();
   }
 }
 
 function toggleBreakLog() {
   if (!checkedIn) return;
   onBreak = !onBreak;
-  localStorage.setItem('officeVibes_onBreak', onBreak);
-
   const tag = document.getElementById('shift-status-tag');
   const breakBtn = document.getElementById('break-btn');
 
   if (onBreak) {
-    if (tag) { tag.innerText = '☕ ON BREAK'; tag.className = 'shift-tag status-break'; }
-    if (breakBtn) breakBtn.innerText = '▶️ End Break';
-    triggerAudioPause();
+    tag.innerText = '☕ ON BREAK';
+    tag.className = 'shift-tag status-break';
+    breakBtn.innerText = '▶️ End Break';
+    if (player && player.pauseVideo) player.pauseVideo();
   } else {
-    if (tag) { tag.innerText = '🟢 ON SHIFT'; tag.className = 'shift-tag status-in'; }
-    if (breakBtn) breakBtn.innerText = '☕ Take Break';
+    tag.innerText = '🟢 ON SHIFT';
+    tag.className = 'shift-tag status-in';
+    breakBtn.innerText = '☕ Take Break';
     
-    // Trigger End Break Reaction
     const endBreakMsg = endBreakPool[Math.floor(Math.random() * endBreakPool.length)];
     showReactionPopup(endBreakMsg, 5000);
 
-    triggerAudioPlay();
+    if (player && player.playVideo) player.playVideo();
   }
 }
 
@@ -341,46 +444,40 @@ function updateShiftLoop() {
   if (onBreak) return;
 
   shiftSecs++;
-  localStorage.setItem('officeVibes_shiftSecs', shiftSecs);
-  updateShiftClockDisplay();
 
-  // Additional Milestone Popups
-  if (shiftSecs === 3600) { // 1 Hour
-    showReactionPopup("ek ghanta ho gaya, mail check kar lo pehle", 6000);
-  } else if (shiftSecs === 7200) { // 2 Hours
-    showReactionPopup("are thak nahi gaye tum", 6000);
-  } else if (shiftSecs === 9000) { // 2.5 Hours
-    showReactionPopup("chal chai pite he", 6000);
-  } else if (shiftSecs === 14400) { // 4 Hours (Lunch Time)
-    showReactionPopup("oy chal its lunch break time", 6000);
-  } else if (shiftSecs === 18000) { // 5 Hours (Post-Lunch)
-    showReactionPopup("post-lunch neend aane lagi hai na?", 6000);
-  } else if (shiftSecs === 21600) { // 6 Hours
-    showReactionPopup("bass 2 ghante aur, thoda aur kheench lo!", 6000);
-  } else if (shiftSecs === 25200) { // 7 Hours (1h Left)
-    showReactionPopup("ghar nahi jana kya..", 6000);
-  } else if (shiftSecs === 27900) { // 7 Hours 45 Mins (15m Left)
-    showReactionPopup("kya re packing ho gayi kya...", 6000);
-  } else if (shiftSecs === 28500) { // 7 Hours 55 Mins (5m Left)
-    showReactionPopup("5 min baaki hain, bag ready rakho!", 6000);
-  } else if (shiftSecs >= SHIFT_TOTAL_SECONDS) { // > 8 Hours
-    const gharJaOverlay = document.getElementById('ghar-ja-overlay');
-    if (gharJaOverlay) gharJaOverlay.classList.remove('hidden');
-  }
-}
-
-function updateShiftClockDisplay() {
   const leftSecs = Math.max(0, SHIFT_TOTAL_SECONDS - shiftSecs);
   const lh = Math.floor(leftSecs / 3600).toString().padStart(2, '0');
   const lm = Math.floor((leftSecs % 3600) / 60).toString().padStart(2, '0');
   const ls = (leftSecs % 60).toString().padStart(2, '0');
-  const clockElem = document.getElementById('countdown-front-text');
-  if (clockElem) clockElem.innerText = `${lh}:${lm}:${ls}`;
+  document.getElementById('countdown-front-text').innerText = `${lh}:${lm}:${ls}`;
+
+  if (shiftSecs === 3600) {
+    showReactionPopup("ek ghanta ho gaya, mail check kar lo pehle", 6000);
+  } else if (shiftSecs === 7200) {
+    showReactionPopup("are thak nahi gaye tum", 6000);
+  } else if (shiftSecs === 9000) {
+    showReactionPopup("chal chai pite he", 6000);
+  } else if (shiftSecs === 14400) {
+    showReactionPopup("oy chal its lunch break time", 6000);
+  } else if (shiftSecs === 18000) {
+    showReactionPopup("post-lunch neend aane lagi hai na?", 6000);
+  } else if (shiftSecs === 21600) {
+    showReactionPopup("bass 2 ghante aur, thoda aur kheench lo!", 6000);
+  } else if (shiftSecs === 25200) {
+    showReactionPopup("ghar nahi jana kya..", 6000);
+  } else if (shiftSecs === 28200) { // 7 Hours 50 Mins
+    // Rule: Set bg1 (8).jpg as background near 7:50
+    setSpecificBg(bgNearEnd);
+    showReactionPopup("Almost 7:50 completed! Time to wrap up!", 6000);
+  } else if (shiftSecs === 28500) { // 7 Hours 55 Mins
+    showReactionPopup("5 min baaki hain, bag ready rakho!", 6000);
+  } else if (shiftSecs >= SHIFT_TOTAL_SECONDS) {
+    document.getElementById('ghar-ja-overlay').classList.remove('hidden');
+  }
 }
 
 function dismissGharJa() {
-  const gharJaOverlay = document.getElementById('ghar-ja-overlay');
-  if (gharJaOverlay) gharJaOverlay.classList.add('hidden');
+  document.getElementById('ghar-ja-overlay').classList.add('hidden');
   toggleShiftLog();
 }
 
@@ -407,125 +504,16 @@ function startSentenceCycle() {
   cycle();
 }
 
-// CUSTOM PLAYLIST ATTACHMENT
-function parseYouTubeUrl(url) {
-  const playlistMatch = url.match(/[?&]list=([^#\&\?]+)/);
-  if (playlistMatch && playlistMatch[1]) {
-    return { type: 'playlist', id: playlistMatch[1] };
-  }
+document.addEventListener('DOMContentLoaded', () => {
+  triggerRandomBg();
+  startSentenceCycle();
+});
 
-  const videoMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|shorts\/)|music\.youtube\.com\/watch\?v=)([^#\&\?]{11})/);
-  if (videoMatch && videoMatch[1]) {
-    return { type: 'video', id: videoMatch[1] };
-  }
-
-  return null;
-}
-
-function addCustomPlaylist() {
-  const titleInput = document.getElementById('custom-task-name');
-  const urlInput = document.getElementById('custom-yt-url');
-
-  const titleVal = titleInput ? titleInput.value.trim() : "";
-  const urlVal = urlInput ? urlInput.value.trim() : "";
-
-  if (!titleVal || !urlVal) {
-    alert("Please enter both a Vibe Name and YouTube Link.");
-    return;
-  }
-
-  const parsed = parseYouTubeUrl(urlVal);
-  if (!parsed) {
-    alert("Invalid YouTube URL format!");
-    return;
-  }
-
-  const newTrack = {
-    id: parsed.id,
-    type: parsed.type,
-    title: titleVal,
-    dept: parsed.type === 'playlist' ? "CUSTOM ALBUM" : "USER VIBE",
-    url: urlVal,
-    icon: parsed.type === 'playlist' ? "🎶" : "🎵"
-  };
-
-  playlists.push(newTrack);
-  savedCustomTracks.push(newTrack);
-  localStorage.setItem('officeVibes_customTracks', JSON.stringify(savedCustomTracks));
-
-  if (titleInput) titleInput.value = "";
-  if (urlInput) urlInput.value = "";
-
-  togglePlaylistCallout();
-  loadPlaylist(playlists.length - 1);
-  alert(`"${titleVal}" added successfully!`);
-}
-
-function resetPlaylists() {
-  localStorage.removeItem('officeVibes_customTracks');
-  savedCustomTracks = [];
-  playlists = [...defaultPlaylists];
-  togglePlaylistCallout();
-  loadPlaylist(0);
-  alert("Playlists reset to default!");
-}
-
-// YOUTUBE API INTEGRATION & DOCK HYDRATION
-function syncIframeTrack(index) {
-  const item = playlists[index];
-  if (!item) return;
-  const iframe = document.getElementById('yt-player');
-  if (iframe) {
-    const targetSrc = item.type === 'playlist' 
-      ? `https://www.youtube.com/embed/videoseries?list=${item.id}&enablejsapi=1`
-      : `https://www.youtube.com/embed/${item.id}?enablejsapi=1`;
-    
-    if (!iframe.src.includes(item.id)) {
-      iframe.src = targetSrc;
-    }
-  }
-}
-
-function updateDockUI(index) {
-  currentIndex = index;
-  localStorage.setItem('officeVibes_trackIndex', index);
-  const item = playlists[index];
-  if (!item) return;
-
-  const randomTask = officeTasks[Math.floor(Math.random() * officeTasks.length)];
-
-  const titleElem = document.getElementById('dock-title');
-  const artistElem = document.getElementById('dock-artist');
-  const artBox = document.getElementById('art-box');
-  const externalLink = document.getElementById('yt-external-link');
-
-  if (titleElem) titleElem.innerText = item.title || randomTask.title;
-  if (artistElem) artistElem.innerText = item.dept || randomTask.dept;
-  if (artBox) artBox.innerText = item.icon;
-  if (externalLink) externalLink.href = item.url;
-
-  syncIframeTrack(index);
-}
-
-function loadPlaylist(index) {
-  updateDockUI(index);
-  const item = playlists[index];
-
-  if (player && typeof player.loadVideoById === 'function') {
-    if (item.type === 'playlist' && typeof player.loadPlaylist === 'function') {
-      player.loadPlaylist({ listType: 'playlist', list: item.id, index: 0, startSeconds: 0 });
-    } else {
-      player.loadVideoById(item.id);
-    }
-  }
-  if (checkedIn) triggerAudioPlay();
-}
-
+// YOUTUBE API INTEGRATION
 function onYouTubeIframeAPIReady() {
   player = new YT.Player('yt-player', {
     height: '100%',
     width: '100%',
-    videoId: playlists[currentIndex].id,
     playerVars: {
       'autoplay': 0,
       'controls': 1,
@@ -541,36 +529,59 @@ function onYouTubeIframeAPIReady() {
   });
 }
 
-function onPlayerReady() { updateDockUI(currentIndex); }
+function onPlayerReady() { loadPlaylist(0); }
 
 function onPlayerStateChange(event) {
   const playIcon = document.getElementById('play-icon');
   if (event.data === YT.PlayerState.PLAYING) {
     isPlaying = true;
-    if (playIcon) playIcon.innerText = '⏸️';
+    playIcon.innerText = '⏸️';
     startProgressTracker();
   } else {
     isPlaying = false;
-    if (playIcon) playIcon.innerText = '☕';
+    playIcon.innerText = '☕';
     stopProgressTracker();
+  }
+}
+
+function updateDockUI(index) {
+  currentIndex = index;
+  const item = playlists[index];
+
+  document.getElementById('dock-title').innerText = item.title;
+  document.getElementById('dock-artist').innerText = item.dept;
+  document.getElementById('art-box').innerText = item.icon;
+  document.getElementById('yt-external-link').href = item.url;
+}
+
+function loadPlaylist(index) {
+  currentIndex = index;
+  updateDockUI(index);
+  const item = playlists[index];
+
+  if (player && player.loadPlaylist && item.type === 'playlist') {
+    player.loadPlaylist({
+      listType: 'playlist',
+      list: item.id,
+      index: 0,
+      startSeconds: 0
+    });
+  } else if (player && player.loadVideoById) {
+    player.loadVideoById(item.id);
   }
 }
 
 function startProgressTracker() {
   stopProgressTracker();
   progressInterval = setInterval(() => {
-    if (player && typeof player.getCurrentTime === 'function' && typeof player.getDuration === 'function') {
-      const current = player.getCurrentTime() || 0;
-      const duration = player.getDuration() || 0;
+    if (player && player.getCurrentTime && player.getDuration) {
+      const current = player.getCurrentTime();
+      const duration = player.getDuration();
       if (duration > 0) {
         const pct = (current / duration) * 100;
-        const fill = document.getElementById('progress-fill');
-        const curTime = document.getElementById('time-current');
-        const totTime = document.getElementById('time-total');
-
-        if (fill) fill.style.width = `${pct}%`;
-        if (curTime) curTime.innerText = formatTime(current);
-        if (totTime) totTime.innerText = formatTime(duration);
+        document.getElementById('progress-fill').style.width = `${pct}%`;
+        document.getElementById('time-current').innerText = formatTime(current);
+        document.getElementById('time-total').innerText = formatTime(duration);
       }
     }
   }, 1000);
@@ -584,83 +595,17 @@ function formatTime(sec) {
   return `${m}:${s}`;
 }
 
-let lampOn = false;
-function toggleLamp() {
-  lampOn = !lampOn;
-  const btn = document.getElementById('lamp-btn');
-  if (lampOn) {
-    document.body.classList.add('lamp-warm-glow');
-    if (btn) btn.innerText = '💡 Desk Lamp ON';
-  } else {
-    document.body.classList.remove('lamp-warm-glow');
-    if (btn) btn.innerText = '💡 Desk Lamp OFF';
-  }
-}
-
-// INITIALIZATION & EVENT LISTENERS
-document.addEventListener('DOMContentLoaded', () => {
-  triggerRandomBg();
-  updateDockUI(currentIndex);
-  updateShiftClockDisplay();
-  startSentenceCycle();
-
-  // Restore Shift State on Reload
-  if (checkedIn) {
-    const tag = document.getElementById('shift-status-tag');
-    const btn = document.getElementById('shift-btn');
-    const breakBtn = document.getElementById('break-btn');
-    const clockContainer = document.getElementById('main-shift-clock');
-
-    if (tag) { 
-      tag.innerText = onBreak ? '☕ ON BREAK' : '🟢 ON SHIFT'; 
-      tag.className = onBreak ? 'shift-tag status-break' : 'shift-tag status-in'; 
-    }
-    if (btn) btn.innerText = '⏰ Log Check-Out';
-    if (breakBtn) {
-      breakBtn.classList.remove('hidden');
-      if (onBreak) breakBtn.innerText = '▶️ End Break';
-    }
-    if (clockContainer) clockContainer.classList.remove('hidden');
-    if (!onBreak && !shiftTimer) {
-      shiftTimer = setInterval(updateShiftLoop, 1000);
-    }
-  }
-
-  // Coffee Play/Pause Button Listener with Check-In Guard
-  const playBtn = document.getElementById('dock-play-btn');
-  if (playBtn) {
-    playBtn.onclick = () => {
-      if (!checkedIn) {
-        const shiftBtn = document.getElementById('shift-btn');
-        if (shiftBtn) {
-          shiftBtn.classList.remove('check-in-attention');
-          void shiftBtn.offsetWidth; // Force reflow
-          shiftBtn.classList.add('check-in-attention');
-          setTimeout(() => shiftBtn.classList.remove('check-in-attention'), 850);
-        }
-        showReactionPopup("Check-In first to start your shift vibe! ⏰", 4000);
-        return;
-      }
-
-      if (isPlaying) { triggerAudioPause(); } else { triggerAudioPlay(); }
-    };
-  }
-
-  const nextBtn = document.getElementById('dock-next-btn');
-  if (nextBtn) {
-    nextBtn.onclick = () => {
-      currentIndex = (currentIndex + 1) % playlists.length;
-      loadPlaylist(currentIndex);
-    };
-  }
-
-  const prevBtn = document.getElementById('dock-prev-btn');
-  if (prevBtn) {
-    prevBtn.onclick = () => {
-      currentIndex = (currentIndex - 1 + playlists.length) % playlists.length;
-      loadPlaylist(currentIndex);
-    };
-  }
+document.getElementById('dock-play-btn').addEventListener('click', () => {
+  if (!player || !player.playVideo) return;
+  if (isPlaying) { player.pauseVideo(); } else { player.playVideo(); }
 });
 
-updateDockUI(currentIndex);
+document.getElementById('dock-next-btn').addEventListener('click', () => {
+  currentIndex = (currentIndex + 1) % playlists.length;
+  loadPlaylist(currentIndex);
+});
+
+document.getElementById('dock-prev-btn').addEventListener('click', () => {
+  currentIndex = (currentIndex - 1 + playlists.length) % playlists.length;
+  loadPlaylist(currentIndex);
+});
