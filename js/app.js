@@ -1,4 +1,28 @@
-﻿const defaultPlaylists = [
+﻿function triggerAudioPlay() {
+  const iframe = document.getElementById('yt-player');
+  if (player && typeof player.playVideo === 'function') {
+    player.playVideo();
+  } else if (iframe && iframe.contentWindow) {
+    iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
+  }
+  isPlaying = true;
+  const playIcon = document.getElementById('play-icon');
+  if (playIcon) playIcon.innerText = '⏸️';
+}
+
+function triggerAudioPause() {
+  const iframe = document.getElementById('yt-player');
+  if (player && typeof player.pauseVideo === 'function') {
+    player.pauseVideo();
+  } else if (iframe && iframe.contentWindow) {
+    iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+  }
+  isPlaying = false;
+  const playIcon = document.getElementById('play-icon');
+  if (playIcon) playIcon.innerText = '☕';
+}
+
+const defaultPlaylists = [
   { id: "qg3X8fKCtZo", title: "Coffee Shop Lo-Fi Flow", dept: "COMMUNICATION & INBOX", url: "https://music.youtube.com/watch?v=qg3X8fKCtZo", icon: "☕", type: "video" },
   { id: "pIvf9bOPXIw", title: "Task 01: Deep Focus Synthwave", dept: "ENGINEERING & TECH", url: "https://music.youtube.com/watch?v=pIvf9bOPXIw", icon: "💻", type: "video" },
   { id: "HLADXoAflHk", title: "Task 03: Chill Ambient Focus", dept: "FINANCE & REPORTING", url: "https://music.youtube.com/watch?v=HLADXoAflHk", icon: "📑", type: "video" }
@@ -387,7 +411,7 @@ function toggleShiftLog() {
     const checkInMsg = checkInPool[Math.floor(Math.random() * checkInPool.length)];
     showReactionPopup(checkInMsg, 5000);
 
-    if (player && typeof player.playVideo === 'function') player.playVideo();
+    triggerAudioPlay();
     if (shiftTimer) clearInterval(shiftTimer);
     shiftTimer = setInterval(updateShiftLoop, 1000);
   } else {
@@ -401,7 +425,7 @@ function toggleShiftLog() {
     onBreak = false;
     updateShiftClockDisplay();
 
-    if (player && typeof player.pauseVideo === 'function') player.pauseVideo();
+    triggerAudioPause();
   }
 }
 
@@ -414,7 +438,7 @@ function toggleBreakLog() {
   if (onBreak) {
     if (tag) { tag.innerText = '☕ ON BREAK'; tag.className = 'shift-tag status-break'; }
     if (breakBtn) breakBtn.innerText = '▶️ End Break';
-    if (player && typeof player.pauseVideo === 'function') player.pauseVideo();
+    triggerAudioPause();
   } else {
     if (tag) { tag.innerText = '🟢 ON SHIFT'; tag.className = 'shift-tag status-in'; }
     if (breakBtn) breakBtn.innerText = '☕ Take Break';
@@ -422,7 +446,7 @@ function toggleBreakLog() {
     const endBreakMsg = endBreakPool[Math.floor(Math.random() * endBreakPool.length)];
     showReactionPopup(endBreakMsg, 5000);
 
-    if (player && typeof player.playVideo === 'function') player.playVideo();
+    triggerAudioPlay();
   }
 }
 
@@ -558,5 +582,6 @@ return;
     });
   }
 });
+
 
 
