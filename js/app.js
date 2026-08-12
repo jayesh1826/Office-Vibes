@@ -1,10 +1,13 @@
 ﻿const defaultPlaylists = [
-  { id: "qg3X8fKCtZo", title: "Coffee Shop Lo-Fi Flow", dept: "COMMUNICATION & INBOX", url: "https://music.youtube.com/watch?v=qg3X8fKCtZo", icon: "☕" },
-  { id: "pIvf9bOPXIw", title: "Task 01: Deep Focus Synthwave", dept: "ENGINEERING & TECH", url: "https://music.youtube.com/watch?v=pIvf9bOPXIw", icon: "💻" },
-  { id: "HLADXoAflHk", title: "Task 03: Chill Ambient Focus", dept: "FINANCE & REPORTING", url: "https://music.youtube.com/watch?v=HLADXoAflHk", icon: "📑" }
+  { id: "qg3X8fKCtZo", title: "Coffee Shop Lo-Fi Flow", dept: "COMMUNICATION & INBOX", url: "https://music.youtube.com/watch?v=qg3X8fKCtZo", icon: "☕", type: "video" },
+  { id: "pIvf9bOPXIw", title: "Task 01: Deep Focus Synthwave", dept: "ENGINEERING & TECH", url: "https://music.youtube.com/watch?v=pIvf9bOPXIw", icon: "💻", type: "video" },
+  { id: "HLADXoAflHk", title: "Task 03: Chill Ambient Focus", dept: "FINANCE & REPORTING", url: "https://music.youtube.com/watch?v=HLADXoAflHk", icon: "📑", type: "video" }
 ];
 
-let playlists = [...defaultPlaylists];
+// Restore custom playlists from localStorage or default
+let savedCustomTracks = JSON.parse(localStorage.getItem('officeVibes_customTracks')) || [];
+let playlists = [...defaultPlaylists, ...savedCustomTracks];
+
 const funIcons = ["💡", "💻", "☕", "🚀", "🎉", "📑", "📊", "🔥", "🎧"];
 
 const bgImages = [
@@ -48,7 +51,7 @@ const endBreakPool = [
 ];
 
 let storedIndex = parseInt(localStorage.getItem('officeVibes_trackIndex'));
-let currentIndex = (!isNaN(storedIndex) && storedIndex < playlists.length) ? storedIndex : 0;
+let currentIndex = (!isNaN(storedIndex) && storedIndex >= 0 && storedIndex < playlists.length) ? storedIndex : 0;
 
 let player = null;
 let isPlaying = false;
@@ -188,7 +191,72 @@ function toggleLamp() {
   }
 }
 
-// UI UPDATE & TRACK LOADING
+// CUSTOM PLAYLIST / TRACK ADDITION LOGIC
+function parseYouTubeUrl(url) {
+  const playlistMatch = url.match(/[?&]list=([^#\&\?]+)/);
+  if (playlistMatch && playlistMatch[1]) {
+    return { type: 'playlist', id: playlistMatch[1] };
+  }
+
+  const videoMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|shorts\/)|music\.youtube\.com\/watch\?v=)([^#\&\?]{11})/);
+  if (videoMatch && videoMatch[1]) {
+    return { type: 'video', id: videoMatch[1] };
+  }
+
+  return null;
+}
+
+function addCustomPlaylist() {
+  const titleInput = document.getElementById('custom-task-name');
+  const urlInput = document.getElementById('custom-yt-url');
+
+  const titleVal = titleInput ? titleInput.value.trim() : "";
+  const urlVal = urlInput ? urlInput.value.trim() : "";
+
+  if (!titleVal || !urlVal) {
+    alert("Please enter both a Vibe Name and YouTube Link.");
+    return;
+  }
+
+  const parsed = parseYouTubeUrl(urlVal);
+  if (!parsed) {
+    alert("Invalid YouTube URL format! Please paste a valid YouTube or YouTube Music link.");
+    return;
+  }
+
+  const newTrack = {
+    id: parsed.id,
+    type: parsed.type,
+    title: titleVal,
+    dept: parsed.type === 'playlist' ? "CUSTOM ALBUM" : "USER VIBE",
+    url: urlVal,
+    icon: parsed.type === 'playlist' ? "🎶" : "🎵"
+  };
+
+  playlists.push(newTrack);
+
+  // Save custom tracks to localStorage
+  savedCustomTracks.push(newTrack);
+  localStorage.setItem('officeVibes_customTracks', JSON.stringify(savedCustomTracks));
+
+  if (titleInput) titleInput.value = "";
+  if (urlInput) urlInput.value = "";
+
+  togglePlaylistCallout();
+  loadPlaylist(playlists.length - 1);
+  alert(`"${titleVal}" added successfully!`);
+}
+
+function resetPlaylists() {
+  localStorage.removeItem('officeVibes_customTracks');
+  savedCustomTracks = [];
+  playlists = [...defaultPlaylists];
+  togglePlaylistCallout();
+  loadPlaylist(0);
+  alert("Playlists reset to default!");
+}
+
+// UI HYDRATION & TRACK LOADING
 function updateDockUI(index) {
   currentIndex = index;
   localStorage.setItem('officeVibes_trackIndex', index);
@@ -210,11 +278,19 @@ function loadPlaylist(index) {
   const item = playlists[index];
 
   if (player && typeof player.loadVideoById === 'function') {
-    player.loadVideoById(item.id);
+    if (item.type === 'playlist' && typeof player.loadPlaylist === 'function') {
+      player.loadPlaylist({ listType: 'playlist', list: item.id, index: 0, startSeconds: 0 });
+    } else {
+      player.loadVideoById(item.id);
+    }
   } else {
     const iframe = document.getElementById('yt-player');
     if (iframe) {
-      iframe.src = `https://www.youtube.com/embed/${item.id}?enablejsapi=1&autoplay=1`;
+      if (item.type === 'playlist') {
+        iframe.src = `https://www.youtube.com/embed/videoseries?list=${item.id}&enablejsapi=1&autoplay=1`;
+      } else {
+        iframe.src = `https://www.youtube.com/embed/${item.id}?enablejsapi=1&autoplay=1`;
+      }
     }
   }
 }
@@ -285,12 +361,12 @@ function formatTime(sec) {
   return `${m}:${s}`;
 }
 
-// 8 HOUR SHIFT TIMER & DISPLAY LOGIC
+// 8 HOUR SHIFT TIMER
 let checkedIn = false;
 let onBreak = false;
 let shiftTimer = null;
 let shiftSecs = 0;
-const SHIFT_TOTAL_SECONDS = 8 * 3600; // 8 Hours
+const SHIFT_TOTAL_SECONDS = 8 * 3600;
 
 function toggleShiftLog() {
   checkedIn = !checkedIn;
@@ -354,7 +430,7 @@ function updateShiftLoop() {
   shiftSecs++;
   updateShiftClockDisplay();
 
-  if (shiftSecs === 28200) { // 7h 50m
+  if (shiftSecs === 28200) {
     setSpecificBg(bgNearEnd);
     showReactionPopup("Almost 7:50 completed! Time to wrap up!", 6000);
   } else if (shiftSecs >= SHIFT_TOTAL_SECONDS) {
@@ -414,12 +490,14 @@ function startSentenceCycle() {
   cycle();
 }
 
-// INITIALIZATION
+// INITIAL DOM HYDRATION
+updateDockUI(currentIndex);
+
 document.addEventListener('DOMContentLoaded', () => {
   triggerRandomBg();
   startSentenceCycle();
   updateDockUI(currentIndex);
-  updateShiftClockDisplay(); // Ensure 08:00:00 renders immediately
+  updateShiftClockDisplay();
 
   const playBtn = document.getElementById('dock-play-btn');
   if (playBtn) {
