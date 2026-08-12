@@ -1,4 +1,15 @@
-﻿function triggerAudioPlay() {
+﻿// Loud Audio Overlay for Notifications (Does not interrupt YouTube player)
+function playOverlayNotificationSound() {
+  try {
+    const sound = new Audio('sounds/notification.mp3');
+    sound.volume = 1.0; // Loud volume
+    sound.play().catch(err => console.log('Audio playback waiting for user interaction:', err));
+  } catch (e) {
+    console.log('Notification audio error:', e);
+  }
+}
+
+function triggerAudioPlay() {
   const iframe = document.getElementById('yt-player');
   if (player && typeof player.playVideo === 'function') {
     player.playVideo();
@@ -485,6 +496,7 @@ function dismissGharJa() {
 
 let popupTimeout = null;
 function showReactionPopup(text, duration = 5000) {
+  playOverlayNotificationSound();
   const popup = document.getElementById('reaction-popup');
   const textElem = document.getElementById('reaction-text');
   if (!popup || !textElem) return;
@@ -582,6 +594,7 @@ return;
     });
   }
 });
+
 
 
 
