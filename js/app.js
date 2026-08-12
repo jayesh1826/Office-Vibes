@@ -1,18 +1,4 @@
-﻿// WEB AUDIO API BELL SYNTHESIS (Overlay Sound - Never interrupts YouTube audio)
-function playNotificationBell() {
-  try {
-    const notifAudio = new Audio('sounds/notification.mp3');
-    notifAudio.volume = 1.0; // Loud volume
-    notifAudio.play().catch(e => console.log("Overlay audio blocked or file missing:", e));
-  } catch (e) {
-    console.log("Audio overlay error:", e);
-  }
-} catch (e) {
-    console.log("Audio overlay blocked or unsupported:", e);
-  }
-}
-
-function triggerAudioPlay() {
+﻿function triggerAudioPlay() {
   const iframe = document.getElementById('yt-player');
   if (player && typeof player.playVideo === 'function') {
     player.playVideo();
@@ -421,7 +407,6 @@ function toggleShiftLog() {
     if (clockContainer) clockContainer.classList.remove('hidden');
 
     setSpecificBg(bgCheckIn);
-    playNotificationBell();
 
     const checkInMsg = checkInPool[Math.floor(Math.random() * checkInPool.length)];
     showReactionPopup(checkInMsg, 5000);
@@ -500,7 +485,6 @@ function dismissGharJa() {
 
 let popupTimeout = null;
 function showReactionPopup(text, duration = 5000) {
-  playNotificationBell(); // Trigger notification chime
   const popup = document.getElementById('reaction-popup');
   const textElem = document.getElementById('reaction-text');
   if (!popup || !textElem) return;
@@ -598,8 +582,6 @@ return;
     });
   }
 });
-
-
 
 
 
