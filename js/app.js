@@ -47,7 +47,6 @@ const endBreakPool = [
   "bas itna hi break? chalo waapas kaam pe..."
 ];
 
-// Restore stored index or default to 0
 let storedIndex = parseInt(localStorage.getItem('officeVibes_trackIndex'));
 let currentIndex = (!isNaN(storedIndex) && storedIndex < playlists.length) ? storedIndex : 0;
 
@@ -65,14 +64,12 @@ function setSpecificBg(imagePath) {
   const layer2 = document.getElementById('bg-layer-2');
 
   if (activeLayer === 1) {
-    layer2.style.backgroundImage = newBgUrl;
-    layer2.style.opacity = '1';
-    layer1.style.opacity = '0';
+    if (layer2) { layer2.style.backgroundImage = newBgUrl; layer2.style.opacity = '1'; }
+    if (layer1) layer1.style.opacity = '0';
     activeLayer = 2;
   } else {
-    layer1.style.backgroundImage = newBgUrl;
-    layer1.style.opacity = '1';
-    layer2.style.opacity = '0';
+    if (layer1) { layer1.style.backgroundImage = newBgUrl; layer1.style.opacity = '1'; }
+    if (layer2) layer2.style.opacity = '0';
     activeLayer = 1;
   }
 }
@@ -93,7 +90,8 @@ setInterval(triggerRandomBg, 12000);
 let stickyGoals = ["Review Q3 Deliverables", "Send status update email"];
 
 function toggleStickyNote() {
-  document.getElementById('sticky-note').classList.toggle('hidden');
+  const elem = document.getElementById('sticky-note');
+  if (elem) elem.classList.toggle('hidden');
   renderStickyGoals();
 }
 
@@ -103,7 +101,7 @@ function handleStickyKeyPress(event) {
 
 function addStickyGoal() {
   const input = document.getElementById('sticky-input');
-  const val = input.value.trim();
+  const val = input ? input.value.trim() : "";
   if (val) {
     stickyGoals.push(val);
     input.value = "";
@@ -118,11 +116,12 @@ function deleteStickyGoal(idx) {
 
 function toggleCompleteGoal(idx, elem) {
   const item = elem.closest('.sticky-item');
-  item.classList.toggle('completed');
+  if (item) item.classList.toggle('completed');
 }
 
 function renderStickyGoals() {
   const list = document.getElementById('sticky-list');
+  if (!list) return;
   list.innerHTML = "";
   stickyGoals.forEach((goal, idx) => {
     const li = document.createElement('li');
@@ -139,21 +138,27 @@ function renderStickyGoals() {
 }
 
 function toggleLaptop() {
-  document.getElementById('laptop-screen-modal').classList.toggle('hidden');
+  const modal = document.getElementById('laptop-screen-modal');
+  if (modal) modal.classList.toggle('hidden');
 }
 
 function toggleFolderModal() {
-  document.getElementById('folder-files-modal').classList.toggle('hidden');
+  const modal = document.getElementById('folder-files-modal');
+  if (modal) modal.classList.toggle('hidden');
 }
 
 function togglePlaylistCallout() {
-  document.getElementById('games-callout').classList.add('hidden');
-  document.getElementById('playlist-callout').classList.toggle('hidden');
+  const games = document.getElementById('games-callout');
+  const playlist = document.getElementById('playlist-callout');
+  if (games) games.classList.add('hidden');
+  if (playlist) playlist.classList.toggle('hidden');
 }
 
 function toggleGamesCallout() {
-  document.getElementById('playlist-callout').classList.add('hidden');
-  document.getElementById('games-callout').classList.toggle('hidden');
+  const playlist = document.getElementById('playlist-callout');
+  const games = document.getElementById('games-callout');
+  if (playlist) playlist.classList.add('hidden');
+  if (games) games.classList.toggle('hidden');
 }
 
 // LAMP TOGGLE
@@ -165,19 +170,21 @@ function toggleLamp() {
   const artBox = document.getElementById('art-box');
 
   const randomIcon = funIcons[Math.floor(Math.random() * funIcons.length)];
-  artBox.innerText = randomIcon;
+  if (artBox) artBox.innerText = randomIcon;
 
-  artBox.classList.add('pop-anim');
-  setTimeout(() => artBox.classList.remove('pop-anim'), 300);
+  if (artBox) {
+    artBox.classList.add('pop-anim');
+    setTimeout(() => artBox.classList.remove('pop-anim'), 300);
+  }
 
   if (lampOn) {
     document.body.classList.add('lamp-warm-glow');
-    artContainer.classList.add('flashlight-active');
-    btn.innerText = '💡 Desk Lamp ON';
+    if (artContainer) artContainer.classList.add('flashlight-active');
+    if (btn) btn.innerText = '💡 Desk Lamp ON';
   } else {
     document.body.classList.remove('lamp-warm-glow');
-    artContainer.classList.remove('flashlight-active');
-    btn.innerText = '💡 Desk Lamp OFF';
+    if (artContainer) artContainer.classList.remove('flashlight-active');
+    if (btn) btn.innerText = '💡 Desk Lamp OFF';
   }
 }
 
@@ -278,12 +285,12 @@ function formatTime(sec) {
   return `${m}:${s}`;
 }
 
-// SHIFT TIMER LOGIC
+// 8 HOUR SHIFT TIMER & DISPLAY LOGIC
 let checkedIn = false;
 let onBreak = false;
 let shiftTimer = null;
 let shiftSecs = 0;
-const SHIFT_TOTAL_SECONDS = 8 * 3600;
+const SHIFT_TOTAL_SECONDS = 8 * 3600; // 8 Hours
 
 function toggleShiftLog() {
   checkedIn = !checkedIn;
@@ -303,7 +310,7 @@ function toggleShiftLog() {
     const checkInMsg = checkInPool[Math.floor(Math.random() * checkInPool.length)];
     showReactionPopup(checkInMsg, 5000);
 
-    if (player && player.playVideo) player.playVideo();
+    if (player && typeof player.playVideo === 'function') player.playVideo();
     if (shiftTimer) clearInterval(shiftTimer);
     shiftTimer = setInterval(updateShiftLoop, 1000);
   } else {
@@ -315,9 +322,61 @@ function toggleShiftLog() {
 
     shiftSecs = 0;
     onBreak = false;
+    updateShiftClockDisplay();
 
-    if (player && player.pauseVideo) player.pauseVideo();
+    if (player && typeof player.pauseVideo === 'function') player.pauseVideo();
   }
+}
+
+function toggleBreakLog() {
+  if (!checkedIn) return;
+  onBreak = !onBreak;
+  const tag = document.getElementById('shift-status-tag');
+  const breakBtn = document.getElementById('break-btn');
+
+  if (onBreak) {
+    if (tag) { tag.innerText = '☕ ON BREAK'; tag.className = 'shift-tag status-break'; }
+    if (breakBtn) breakBtn.innerText = '▶️ End Break';
+    if (player && typeof player.pauseVideo === 'function') player.pauseVideo();
+  } else {
+    if (tag) { tag.innerText = '🟢 ON SHIFT'; tag.className = 'shift-tag status-in'; }
+    if (breakBtn) breakBtn.innerText = '☕ Take Break';
+    
+    const endBreakMsg = endBreakPool[Math.floor(Math.random() * endBreakPool.length)];
+    showReactionPopup(endBreakMsg, 5000);
+
+    if (player && typeof player.playVideo === 'function') player.playVideo();
+  }
+}
+
+function updateShiftLoop() {
+  if (onBreak) return;
+  shiftSecs++;
+  updateShiftClockDisplay();
+
+  if (shiftSecs === 28200) { // 7h 50m
+    setSpecificBg(bgNearEnd);
+    showReactionPopup("Almost 7:50 completed! Time to wrap up!", 6000);
+  } else if (shiftSecs >= SHIFT_TOTAL_SECONDS) {
+    const gharJaOverlay = document.getElementById('ghar-ja-overlay');
+    if (gharJaOverlay) gharJaOverlay.classList.remove('hidden');
+  }
+}
+
+function updateShiftClockDisplay() {
+  const leftSecs = Math.max(0, SHIFT_TOTAL_SECONDS - shiftSecs);
+  const lh = Math.floor(leftSecs / 3600).toString().padStart(2, '0');
+  const lm = Math.floor((leftSecs % 3600) / 60).toString().padStart(2, '0');
+  const ls = (leftSecs % 60).toString().padStart(2, '0');
+
+  const clockElem = document.getElementById('countdown-front-text');
+  if (clockElem) clockElem.innerText = `${lh}:${lm}:${ls}`;
+}
+
+function dismissGharJa() {
+  const gharJaOverlay = document.getElementById('ghar-ja-overlay');
+  if (gharJaOverlay) gharJaOverlay.classList.add('hidden');
+  toggleShiftLog();
 }
 
 let popupTimeout = null;
@@ -355,13 +414,12 @@ function startSentenceCycle() {
   cycle();
 }
 
-// INITIALIZATION & EVENT LISTENERS
+// INITIALIZATION
 document.addEventListener('DOMContentLoaded', () => {
   triggerRandomBg();
   startSentenceCycle();
-  
-  // IMMEDIATELY FORCE UI TO SHOW CURRENT ACTIVE TRACK (Fixes "Select Task Vibe...")
   updateDockUI(currentIndex);
+  updateShiftClockDisplay(); // Ensure 08:00:00 renders immediately
 
   const playBtn = document.getElementById('dock-play-btn');
   if (playBtn) {
