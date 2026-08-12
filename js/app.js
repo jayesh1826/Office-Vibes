@@ -1,7 +1,7 @@
 ﻿const defaultPlaylists = [
-  { id: "PL4fGSI1pDJn5RgLW0Sb_zECecWdH_4zOX", title: "Office Vibe Lofi Playlist", dept: "COMMUNICATION & INBOX", url: "https://music.youtube.com/playlist?list=PL4fGSI1pDJn5RgLW0Sb_zECecWdH_4zOX", icon: "☕", type: "playlist" },
-  { id: "5qap5aO4i9A", title: "Lofi Girl - Chilled Beats", dept: "ENGINEERING & TECH", url: "https://www.youtube.com/watch?v=5qap5aO4i9A", icon: "💻", type: "video" },
-  { id: "DWcJFNfaw9c", title: "ChillSynth Radio - Deep Focus", dept: "FINANCE & REPORTING", url: "https://www.youtube.com/watch?v=DWcJFNfaw9c", icon: "📑", type: "video" }
+  { id: "qg3X8fKCtZo", title: "Coffee Shop Lo-Fi Flow", dept: "COMMUNICATION & INBOX", url: "https://music.youtube.com/watch?v=qg3X8fKCtZo", icon: "☕", type: "video" },
+  { id: "pIvf9bOPXIw", title: "Task 01: Deep Focus Synthwave", dept: "ENGINEERING & TECH", url: "https://music.youtube.com/watch?v=pIvf9bOPXIw", icon: "💻", type: "video" },
+  { id: "HLADXoAflHk", title: "Task 03: Chill Ambient Focus", dept: "FINANCE & REPORTING", url: "https://music.youtube.com/watch?v=HLADXoAflHk", icon: "📑", type: "video" }
 ];
 
 // Restore custom tracks from localStorage
@@ -64,23 +64,18 @@ let player = null;
 let isPlaying = false;
 let progressInterval = null;
 
-// POMODORO TIMER STATE
-let pomoDurationMinutes = 25;
-let pomoTimerInterval = null;
-let pomoRemainingSeconds = 25 * 60;
-
 // LOUD OVERLAY NOTIFICATION AUDIO
 function playOverlayNotificationSound() {
   try {
     const sound = new Audio('sounds/notification.mp3');
     sound.volume = 1.0;
-    sound.play().catch(err => console.log('Audio overlay waiting for user click:', err));
+    sound.play().catch(err => console.log('Audio overlay blocked until click:', err));
   } catch (e) {
     console.log('Notification sound error:', e);
   }
 }
 
-// AUDIO CONTROLLER & PROGRESS TRACKER
+// AUDIO CONTROLLER FUNCTIONS
 function triggerAudioPlay() {
   const iframe = document.getElementById('yt-player');
   if (player && typeof player.playVideo === 'function') {
@@ -91,7 +86,6 @@ function triggerAudioPlay() {
   isPlaying = true;
   const playIcon = document.getElementById('play-icon');
   if (playIcon) playIcon.innerText = '⏸️';
-  startProgressTracker();
 }
 
 function triggerAudioPause() {
@@ -104,62 +98,6 @@ function triggerAudioPause() {
   isPlaying = false;
   const playIcon = document.getElementById('play-icon');
   if (playIcon) playIcon.innerText = '☕';
-  stopProgressTracker();
-}
-
-function startProgressTracker() {
-  stopProgressTracker();
-  progressInterval = setInterval(() => {
-    if (player && typeof player.getCurrentTime === 'function' && typeof player.getDuration === 'function') {
-      const current = player.getCurrentTime() || 0;
-      const duration = player.getDuration() || 0;
-      if (duration > 0) {
-        const pct = (current / duration) * 100;
-        const fill = document.getElementById('progress-fill');
-        const curTime = document.getElementById('time-current');
-        const totTime = document.getElementById('time-total');
-        
-        if (fill) fill.style.width = `${pct}%`;
-        if (curTime) curTime.innerText = formatTime(current);
-        if (totTime) totTime.innerText = formatTime(duration);
-      }
-    }
-  }, 1000);
-}
-
-function stopProgressTracker() { 
-  if (progressInterval) clearInterval(progressInterval); 
-}
-
-function formatTime(sec) {
-  const m = Math.floor(sec / 60);
-  const s = Math.floor(sec % 60).toString().padStart(2, '0');
-  return `${m}:${s}`;
-}
-
-// POMODORO DOSSIER LOGIC
-function selectPomoTime(mins, btnElem) {
-  pomoDurationMinutes = mins;
-  pomoRemainingSeconds = mins * 60;
-
-  const allBtns = document.querySelectorAll('.pomo-option-btn, [onclick*="selectPomoTime"]');
-  allBtns.forEach(btn => btn.classList.remove('active'));
-  if (btnElem) btnElem.classList.add('active');
-}
-
-function startPomodoro() {
-  if (pomoTimerInterval) clearInterval(pomoTimerInterval);
-
-  showReactionPopup(`🎯 Pomodoro Started for ${pomoDurationMinutes} minutes! Deep Focus Mode.`, 5000);
-  toggleFolderModal();
-
-  pomoTimerInterval = setInterval(() => {
-    pomoRemainingSeconds--;
-    if (pomoRemainingSeconds <= 0) {
-      clearInterval(pomoTimerInterval);
-      showReactionPopup("🎉 Pomodoro Finished! Take a short 5-minute break.", 7000);
-    }
-  }, 1000);
 }
 
 // BACKGROUND SLIDESHOW LOGIC
@@ -405,7 +343,6 @@ function loadPlaylist(index) {
       player.loadVideoById(item.id);
     }
   }
-  if (checkedIn) triggerAudioPlay();
 }
 
 // YOUTUBE API INTEGRATION
@@ -444,6 +381,34 @@ function onPlayerStateChange(event) {
     if (playIcon) playIcon.innerText = '☕';
     stopProgressTracker();
   }
+}
+
+function startProgressTracker() {
+  stopProgressTracker();
+  progressInterval = setInterval(() => {
+    if (player && player.getCurrentTime && player.getDuration) {
+      const current = player.getCurrentTime();
+      const duration = player.getDuration();
+      if (duration > 0) {
+        const pct = (current / duration) * 100;
+        const fill = document.getElementById('progress-fill');
+        const curTime = document.getElementById('time-current');
+        const totTime = document.getElementById('time-total');
+        
+        if (fill) fill.style.width = `${pct}%`;
+        if (curTime) curTime.innerText = formatTime(current);
+        if (totTime) totTime.innerText = formatTime(duration);
+      }
+    }
+  }, 1000);
+}
+
+function stopProgressTracker() { if (progressInterval) clearInterval(progressInterval); }
+
+function formatTime(sec) {
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60).toString().padStart(2, '0');
+  return `${m}:${s}`;
 }
 
 // 8 HOUR SHIFT TIMER & PERSISTENCE
@@ -576,15 +541,18 @@ function startSentenceCycle() {
   cycle();
 }
 
-// DOM INITIALIZATION & EVENT BINDINGS
+// DOM INITIALIZATION
 document.addEventListener('DOMContentLoaded', () => {
+  // 1. Instantly set first background image to eliminate black screen gap
   const layer1 = document.getElementById('bg-layer-1');
   if (layer1) layer1.style.backgroundImage = `url('${bgImages[0]}')`;
 
+  // 2. Hydrate UI track title and iframe
   updateDockUI(currentIndex);
   updateShiftClockDisplay();
   startSentenceCycle();
 
+  // 3. Restore Shift State on refresh
   if (checkedIn) {
     const tag = document.getElementById('shift-status-tag');
     const btn = document.getElementById('shift-btn');
@@ -606,42 +574,30 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Coffee Play/Pause Button Listener with Check-In Guard
+  // 4. Attach Dock Control Listeners
   const playBtn = document.getElementById('dock-play-btn');
   if (playBtn) {
-    playBtn.onclick = () => {
-      if (!checkedIn) {
-        const shiftBtn = document.getElementById('shift-btn');
-        if (shiftBtn) {
-          shiftBtn.classList.remove('check-in-attention');
-          void shiftBtn.offsetWidth; // Force reflow
-          shiftBtn.classList.add('check-in-attention');
-          setTimeout(() => shiftBtn.classList.remove('check-in-attention'), 850);
-        }
-        showReactionPopup("Check-In first to start your shift vibe! ⏰", 4000);
-        return;
-      }
-
+    playBtn.addEventListener('click', () => {
       if (isPlaying) { triggerAudioPause(); } else { triggerAudioPlay(); }
-    };
+    });
   }
 
-  // Prev / Next Track Button Listeners
   const nextBtn = document.getElementById('dock-next-btn');
   if (nextBtn) {
-    nextBtn.onclick = () => {
+    nextBtn.addEventListener('click', () => {
       let nextIndex = (currentIndex + 1) % playlists.length;
       loadPlaylist(nextIndex);
-    };
+    });
   }
 
   const prevBtn = document.getElementById('dock-prev-btn');
   if (prevBtn) {
-    prevBtn.onclick = () => {
+    prevBtn.addEventListener('click', () => {
       let prevIndex = (currentIndex - 1 + playlists.length) % playlists.length;
       loadPlaylist(prevIndex);
-    };
+    });
   }
 });
 
+// Immediate track UI hydration at script load
 updateDockUI(currentIndex);
