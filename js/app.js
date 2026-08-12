@@ -541,9 +541,9 @@ function startSentenceCycle() {
   cycle();
 }
 
-// DOM INITIALIZATION
+// DOM INITIALIZATION & ALL CLICK EVENT LISTENERS
 document.addEventListener('DOMContentLoaded', () => {
-  // 1. Instantly set first background image to eliminate black screen gap
+  // 1. Instantly set first background image
   const layer1 = document.getElementById('bg-layer-1');
   if (layer1) layer1.style.backgroundImage = `url('${bgImages[0]}')`;
 
@@ -574,16 +574,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // 4. Attach Dock Control Listeners
-    const playBtn = document.getElementById('dock-play-btn');
+  // 4. Attach Play / Pause Coffee Button Listener with Check-In Guard
+  const playBtn = document.getElementById('dock-play-btn');
   if (playBtn) {
     playBtn.onclick = () => {
       if (!checkedIn) {
-        // Trigger buzz and glow on Check-In button
         const shiftBtn = document.getElementById('shift-btn');
         if (shiftBtn) {
           shiftBtn.classList.remove('check-in-attention');
-          void shiftBtn.offsetWidth; // Force DOM reflow to re-trigger animation
+          void shiftBtn.offsetWidth; // Force reflow
           shiftBtn.classList.add('check-in-attention');
           setTimeout(() => shiftBtn.classList.remove('check-in-attention'), 850);
         }
@@ -591,35 +590,27 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      // Smooth play/pause toggle when checked in
-      if (isPlaying) {
-        triggerAudioPause();
-      } else {
-        triggerAudioPlay();
-      }
+      if (isPlaying) { triggerAudioPause(); } else { triggerAudioPlay(); }
     };
   }
-  }
 
+  // 5. Next & Previous Track Listeners
   const nextBtn = document.getElementById('dock-next-btn');
   if (nextBtn) {
-    nextBtn.addEventListener('click', () => {
+    nextBtn.onclick = () => {
       let nextIndex = (currentIndex + 1) % playlists.length;
       loadPlaylist(nextIndex);
-    });
+    };
   }
 
   const prevBtn = document.getElementById('dock-prev-btn');
   if (prevBtn) {
-    prevBtn.addEventListener('click', () => {
+    prevBtn.onclick = () => {
       let prevIndex = (currentIndex - 1 + playlists.length) % playlists.length;
       loadPlaylist(prevIndex);
-    });
+    };
   }
 });
 
-// Immediate track UI hydration at script load
+// Immediate UI Hydration
 updateDockUI(currentIndex);
-
-
-
