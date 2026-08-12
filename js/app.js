@@ -527,8 +527,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const playBtn = document.getElementById('dock-play-btn');
   if (playBtn) {
     playBtn.addEventListener('click', () => {
-      if (!player || typeof player.playVideo !== 'function') return;
-      if (isPlaying) { player.pauseVideo(); } else { player.playVideo(); }
+      const iframe = document.getElementById('yt-player');
+if (player && typeof player.playVideo === 'function' && typeof player.pauseVideo === 'function') {
+  if (isPlaying) { player.pauseVideo(); } else { player.playVideo(); }
+} else if (iframe && iframe.contentWindow) {
+  // Direct postMessage fallback if YouTube API object is still initializing
+  const cmd = isPlaying ? '{"event":"command","func":"pauseVideo","args":""}' : '{"event":"command","func":"playVideo","args":""}';
+  iframe.contentWindow.postMessage(cmd, '*');
+  isPlaying = !isPlaying;
+  const playIcon = document.getElementById('play-icon');
+  if (playIcon) playIcon.innerText = isPlaying ? '⏸️' : '☕';
+}
+return;
     });
   }
 
@@ -548,4 +558,5 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
 
