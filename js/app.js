@@ -1,4 +1,20 @@
-﻿// Loud Audio Overlay for Notifications (Does not interrupt YouTube player)
+﻿function syncIframeTrack(index) {
+  const item = playlists[index];
+  if (!item) return;
+  const iframe = document.getElementById('yt-player');
+  if (iframe) {
+    const targetSrc = item.type === 'playlist' 
+      ? `https://www.youtube.com/embed/videoseries?list=${item.id}&enablejsapi=1`
+      : `https://www.youtube.com/embed/${item.id}?enablejsapi=1`;
+    
+    // Only update iframe src if it changed, preventing unnecessary reloads
+    if (!iframe.src.includes(item.id)) {
+      iframe.src = targetSrc;
+    }
+  }
+}
+
+// Loud Audio Overlay for Notifications (Does not interrupt YouTube player)
 function playOverlayNotificationSound() {
   try {
     const sound = new Audio('sounds/notification.mp3');
@@ -113,6 +129,10 @@ function setSpecificBg(imagePath) {
 }
 
 function triggerRandomBg() {
+  if (currentBgIndex === -1) {
+    const layer1 = document.getElementById('bg-layer-1');
+    if (layer1) layer1.style.backgroundImage = url('');
+  }
   let nextIndex;
   do {
     nextIndex = Math.floor(Math.random() * bgImages.length);
@@ -293,6 +313,7 @@ function resetPlaylists() {
 
 // UI HYDRATION & TRACK LOADING
 function updateDockUI(index) {
+  syncIframeTrack(index);
   currentIndex = index;
   localStorage.setItem('officeVibes_trackIndex', index);
   const item = playlists[index];
@@ -562,21 +583,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const playBtn = document.getElementById('dock-play-btn');
   if (playBtn) {
-    playBtn.addEventListener('click', () => {
-      const iframe = document.getElementById('yt-player');
-if (player && typeof player.playVideo === 'function' && typeof player.pauseVideo === 'function') {
-  if (isPlaying) { player.pauseVideo(); } else { player.playVideo(); }
-} else if (iframe && iframe.contentWindow) {
-  // Direct postMessage fallback if YouTube API object is still initializing
-  const cmd = isPlaying ? '{"event":"command","func":"pauseVideo","args":""}' : '{"event":"command","func":"playVideo","args":""}';
-  iframe.contentWindow.postMessage(cmd, '*');
-  isPlaying = !isPlaying;
-  const playIcon = document.getElementById('play-icon');
-  if (playIcon) playIcon.innerText = isPlaying ? '⏸️' : '☕';
+  playBtn.addEventListener('click', () => {
+    if (isPlaying) {
+      triggerAudioPause();
+    } else {
+      triggerAudioPlay();
+    }
+  });
 }
-return;
-    });
-  }
 
   const nextBtn = document.getElementById('dock-next-btn');
   if (nextBtn) {
@@ -597,4 +611,24 @@ return;
 
 
 
+
+
+
+
+
+// Direct Play/Pause Dock Listener Fix
+document.addEventListener('DOMContentLoaded', () => {
+  const dockPlayBtn = document.getElementById('dock-play-btn');
+  if (dockPlayBtn) {
+    dockPlayBtn.onclick = () => {
+      if (isPlaying) {
+        triggerAudioPause();
+      } else {
+        triggerAudioPlay();
+      }
+    };
+  }
+});
+
+updateDockUI(currentIndex);
 
