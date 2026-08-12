@@ -1,7 +1,7 @@
 ﻿const defaultPlaylists = [
-  { id: "qg3X8fKCtZo", title: "Coffee Shop Lo-Fi Flow", dept: "COMMUNICATION & INBOX", url: "https://music.youtube.com/watch?v=qg3X8fKCtZo", icon: "☕", type: "video" },
-  { id: "pIvf9bOPXIw", title: "Task 01: Deep Focus Synthwave", dept: "ENGINEERING & TECH", url: "https://music.youtube.com/watch?v=pIvf9bOPXIw", icon: "💻", type: "video" },
-  { id: "HLADXoAflHk", title: "Task 03: Chill Ambient Focus", dept: "FINANCE & REPORTING", url: "https://music.youtube.com/watch?v=HLADXoAflHk", icon: "📑", type: "video" }
+  { id: "PL4fGSI1pDJn5RgLW0Sb_zECecWdH_4zOX", title: "Office Vibe Lofi Playlist", dept: "COMMUNICATION & INBOX", url: "https://music.youtube.com/playlist?list=PL4fGSI1pDJn5RgLW0Sb_zECecWdH_4zOX", icon: "☕", type: "playlist" },
+  { id: "5qap5aO4i9A", title: "Lofi Girl - Chilled Beats", dept: "ENGINEERING & TECH", url: "https://www.youtube.com/watch?v=5qap5aO4i9A", icon: "💻", type: "video" },
+  { id: "DWcJFNfaw9c", title: "ChillSynth Radio - Deep Focus", dept: "FINANCE & REPORTING", url: "https://www.youtube.com/watch?v=DWcJFNfaw9c", icon: "📑", type: "video" }
 ];
 
 // Restore custom tracks from localStorage
@@ -575,11 +575,30 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // 4. Attach Dock Control Listeners
-  const playBtn = document.getElementById('dock-play-btn');
+    const playBtn = document.getElementById('dock-play-btn');
   if (playBtn) {
-    playBtn.addEventListener('click', () => {
-      if (isPlaying) { triggerAudioPause(); } else { triggerAudioPlay(); }
-    });
+    playBtn.onclick = () => {
+      if (!checkedIn) {
+        // Trigger buzz and glow on Check-In button
+        const shiftBtn = document.getElementById('shift-btn');
+        if (shiftBtn) {
+          shiftBtn.classList.remove('check-in-attention');
+          void shiftBtn.offsetWidth; // Force DOM reflow to re-trigger animation
+          shiftBtn.classList.add('check-in-attention');
+          setTimeout(() => shiftBtn.classList.remove('check-in-attention'), 850);
+        }
+        showReactionPopup("Check-In first to start your shift vibe! ⏰", 4000);
+        return;
+      }
+
+      // Smooth play/pause toggle when checked in
+      if (isPlaying) {
+        triggerAudioPause();
+      } else {
+        triggerAudioPlay();
+      }
+    };
+  }
   }
 
   const nextBtn = document.getElementById('dock-next-btn');
@@ -601,3 +620,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Immediate track UI hydration at script load
 updateDockUI(currentIndex);
+
+
+
