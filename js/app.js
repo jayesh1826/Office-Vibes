@@ -60,7 +60,7 @@ const corporateSentences = [
 ];
 
 const checkInPool = [
-  "in last to aa gaye aap...",
+  "To aa gaye aap...",
   "aaj toh time pe aaye ho, kya baat hai!",
   "chalo, aaj ka natak shuru karte hain..."
 ];
@@ -260,61 +260,67 @@ function resetPlaylists() {
   alert("Playlists reset!");
 }
 
-// QUICK MINI GAMES LOGIC
-function switchGame(gameType) {
-  const btns = document.querySelectorAll('.game-nav-btn');
-  btns.forEach(b => b.classList.remove('active'));
-
-  document.getElementById('game-ttt').classList.add('hidden');
-  document.getElementById('game-coin').classList.add('hidden');
-
-  if (gameType === 'ttt') {
-    btns[0].classList.add('active');
-    document.getElementById('game-ttt').classList.remove('hidden');
-  } else if (gameType === 'coin') {
-    btns[1].classList.add('active');
-    document.getElementById('game-coin').classList.remove('hidden');
-  }
-}
 
 // TIC-TAC-TOE VS AI
-let tttBoard = ["", "", "", "", "", "", "", "", ""];
+/*let tttBoard = ["", "", "", "", "", "", "", "", ""];
 let tttActive = true;
+
+// Corporate Hinglish AI Defeat Pool
+const aiDefeatPool = [
+  "Bhai bhai! Bandwidth tight lag rahi hai AI ki...",
+  "Lagta hai AI ka server crash ho gaya, aap jeet gaye!",
+  "Aapne toh AI ko bhi PIP (Performance Improvement Plan) pe daal diya!",
+  "AI busy tha meeting mein, aapne mauke ka fayda utha liya!",
+  "Bhai sahab! Client ko mat batana AI haar gaya...",
+  "Ye Jeet AAPKO MUBARAK HO! Promotion pakka?"
+];
 
 function makeMove(index) {
   if (tttBoard[index] !== "" || !tttActive) return;
 
-  tttBoard[index] = "X";
+  // 1. Human makes a move
+  tttBoard[index] = HUMAN_PLAYER;
   renderTTT();
 
-  if (checkTTTWin("X")) {
-    document.getElementById('ttt-status').innerText = "🎉 You Won!";
+  // 🏆 CHECK IF HUMAN WINS
+  if (checkTTTWin(tttBoard, HUMAN_PLAYER)) {
+    document.getElementById('ttt-status').innerText = "🎉 You Beat the AI!";
     tttActive = false;
+
+    // Trigger sound & random Hinglish reaction popup
+    const winMsg = aiDefeatPool[Math.floor(Math.random() * aiDefeatPool.length)];
+    if (typeof showReactionPopup === 'function') {
+      showReactionPopup(winMsg, 6000);
+    }
     return;
   }
 
-  if (tttBoard.every(cell => cell !== "")) {
+  if (isBoardFull(tttBoard)) {
     document.getElementById('ttt-status').innerText = "🤝 It's a Draw!";
     tttActive = false;
     return;
   }
 
+  // 2. AI calculates move (with 20% mistake jumper)
   document.getElementById('ttt-status').innerText = "AI thinking...";
   setTimeout(() => {
-    let emptyIndices = tttBoard.map((val, idx) => cellVal(val, idx)).filter(val => val !== null);
-    if (emptyIndices.length > 0) {
-      let aiChoice = emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
-      tttBoard[aiChoice] = "O";
+    let bestMove = getBestMove(tttBoard);
+    
+    if (bestMove !== null && bestMove !== undefined) {
+      tttBoard[bestMove] = AI_PLAYER;
       renderTTT();
 
-      if (checkTTTWin("O")) {
+      if (checkTTTWin(tttBoard, AI_PLAYER)) {
         document.getElementById('ttt-status').innerText = "💻 AI Won!";
+        tttActive = false;
+      } else if (isBoardFull(tttBoard)) {
+        document.getElementById('ttt-status').innerText = "🤝 It's a Draw!";
         tttActive = false;
       } else {
         document.getElementById('ttt-status').innerText = "Your turn (X)";
       }
     }
-  }, 400);
+  }, 300);
 }
 
 function cellVal(val, idx) { return val === "" ? idx : null; }
@@ -340,6 +346,359 @@ function resetTTT() {
   tttActive = true;
   document.getElementById('ttt-status').innerText = "Your turn (X)";
   renderTTT();
+} */
+
+// TIC-TAC-TOE WITH STREAK & GLOW EFFECTS
+let tttBoard = ["", "", "", "", "", "", "", "", ""];
+let tttActive = true;
+let winStreak = 0; // Tracks consecutive wins!
+
+const AI_PLAYER = "O";
+const HUMAN_PLAYER = "X";
+
+// Corporate Hinglish AI Defeat Pool
+const aiDefeatPool = [
+  "Bhai bhai! Bandwidth tight lag rahi hai AI ki...",
+  "Lagta hai AI ka server crash ho gaya, aap jeet gaye!",
+  "Aapne toh AI ko bhi PIP pe daal diya!",
+  "Ye Jeet AAPKO MUBARAK HO! Promotion pakka?"
+];
+
+// Special 3-IN-A-ROW WIN STREAK Pool! 🔥
+const streak3WinPool = [
+  "🔥 HAT-TRICK! 3 WINS IN A ROW! Aapko CEO banao abhi!",
+  "🏆 UNSTOPPABLE! 3-time champion! AI resign kar raha hai!",
+  "👑 3 WINS! Bhai aapka appraisal toh 100% fixed hai iss saal!",
+  "🚀 HAT-TRICK VICTORY! Boss ko bolo direct Appraisal letter bheje!"
+];
+
+function makeMove(index) {
+  if (tttBoard[index] !== "" || !tttActive) return;
+
+  // 1. Human makes a move
+  tttBoard[index] = HUMAN_PLAYER;
+  renderTTT();
+
+  // 🏆 CHECK IF HUMAN WINS
+  const humanWinCombo = checkTTTWinCombo(tttBoard, HUMAN_PLAYER);
+  if (humanWinCombo) {
+    winStreak++;
+    tttActive = false;
+    highlightWinningCells(humanWinCombo, "human-glow");
+
+    // Check if user hit the 3-Win Streak
+    if (winStreak === 3) {
+      document.getElementById('ttt-status').innerText = "🔥 3-IN-A-ROW HAT-TRICK!";
+      const streakMsg = streak3WinPool[Math.floor(Math.random() * streak3WinPool.length)];
+      if (typeof showReactionPopup === 'function') {
+        showReactionPopup(streakMsg, 8000);
+      }
+      winStreak = 0;
+    } else {
+      document.getElementById('ttt-status').innerText = `🎉 Win #${winStreak}! (${3 - winStreak} more for Hat-Trick)`;
+      const winMsg = aiDefeatPool[Math.floor(Math.random() * aiDefeatPool.length)];
+      if (typeof showReactionPopup === 'function') {
+        showReactionPopup(winMsg, 5000);
+      }
+    }
+    return;
+  }
+
+  // Draw resets streak
+  if (isBoardFull(tttBoard)) {
+    winStreak = 0; 
+    document.getElementById('ttt-status').innerText = "🤝 Draw! Streak reset to 0.";
+    tttActive = false;
+    return;
+  }
+
+  // 2. AI calculates move (with 50% mistake jumper)
+  document.getElementById('ttt-status').innerText = "AI thinking...";
+  setTimeout(() => {
+    let bestMove = getBestMove(tttBoard);
+    
+    if (bestMove !== null && bestMove !== undefined) {
+      tttBoard[bestMove] = AI_PLAYER;
+      renderTTT();
+
+      const aiWinCombo = checkTTTWinCombo(tttBoard, AI_PLAYER);
+      if (aiWinCombo) {
+        winStreak = 0; // AI Win resets human streak to 0!
+        tttActive = false;
+        highlightWinningCells(aiWinCombo, "ai-glow");
+        document.getElementById('ttt-status').innerText = "💻 AI Won! Streak reset.";
+      } else if (isBoardFull(tttBoard)) {
+        winStreak = 0; // Draw resets streak
+        document.getElementById('ttt-status').innerText = "🤝 Draw! Streak reset to 0.";
+        tttActive = false;
+      } else {
+        document.getElementById('ttt-status').innerText = winStreak > 0 
+          ? `Your turn (X) - Streak: ${winStreak}🔥` 
+          : "Your turn (X)";
+      }
+    }
+  }, 300);
+}
+
+// Check if any player has won; returns array [idx1, idx2, idx3] if true, else null
+function checkTTTWinCombo(board, playerSymbol) {
+  const wins = [
+    [0,1,2], [3,4,5], [6,7,8], // Rows
+    [0,3,6], [1,4,7], [2,5,8], // Columns
+    [0,4,8], [2,4,6]          // Diagonals
+  ];
+  
+  return wins.find(combo => combo.every(idx => board[idx] === playerSymbol)) || null;
+}
+
+// Boolean helper specifically for Minimax simulation calculations
+function checkTTTWin(board, playerSymbol) {
+  return checkTTTWinCombo(board, playerSymbol) !== null;
+}
+
+// Adds glow classes to the 3 winning cell buttons
+function highlightWinningCells(winningIndices, glowTypeClass) {
+  if (!Array.isArray(winningIndices)) return;
+  const cells = document.querySelectorAll('.ttt-cell');
+  winningIndices.forEach(idx => {
+    if (cells[idx]) {
+      cells[idx].classList.add('glow-win', glowTypeClass);
+    }
+  });
+}
+
+// Clear board and remove glow effects
+function resetTTT() {
+  tttBoard = ["", "", "", "", "", "", "", "", ""];
+  tttActive = true;
+  document.getElementById('ttt-status').innerText = winStreak > 0 
+    ? `Your turn (X) - Streak: ${winStreak}🔥` 
+    : "Your turn (X)";
+
+  const cells = document.querySelectorAll('.ttt-cell');
+  cells.forEach(cell => {
+    cell.classList.remove('glow-win', 'human-glow', 'ai-glow');
+  });
+
+  renderTTT();
+}
+
+// Check if any empty spots remain
+function isBoardFull(board) {
+  return board.every(cell => cell !== "");
+}
+
+// Find all available cell indices
+function getEmptyIndices(board) {
+  return board.reduce((acc, val, idx) => (val === "" ? acc.concat(idx) : acc), []);
+}
+
+// MINIMAX CORE ALGORITHM
+function minimax(newBoard, depth, isMaximizing) {
+  if (checkTTTWin(newBoard, AI_PLAYER)) return 10 - depth;
+  if (checkTTTWin(newBoard, HUMAN_PLAYER)) return depth - 10;
+  
+  const availSpots = getEmptyIndices(newBoard);
+  if (availSpots.length === 0) return 0; // Draw
+
+  if (isMaximizing) {
+    let bestScore = -Infinity;
+    for (let i = 0; i < availSpots.length; i++) {
+      const idx = availSpots[i];
+      newBoard[idx] = AI_PLAYER;
+      let score = minimax(newBoard, depth + 1, false);
+      newBoard[idx] = "";
+      bestScore = Math.max(score, bestScore);
+    }
+    return bestScore;
+  } else {
+    let bestScore = Infinity;
+    for (let i = 0; i < availSpots.length; i++) {
+      const idx = availSpots[i];
+      newBoard[idx] = HUMAN_PLAYER;
+      let score = minimax(newBoard, depth + 1, true);
+      newBoard[idx] = "";
+      bestScore = Math.min(score, bestScore);
+    }
+    return bestScore;
+  }
+}
+
+// Finds the move for the AI using a Hidden Random Mode Jumper
+function getBestMove(board) {
+  const availSpots = getEmptyIndices(board);
+
+  if (availSpots.length === 9) return 4;
+
+  const errorChance = 0.50; // 50% mistake rate
+  const shouldMakeMistake = Math.random() < errorChance;
+
+  if (shouldMakeMistake && availSpots.length > 1) {
+    const randomIndex = Math.floor(Math.random() * availSpots.length);
+    return availSpots[randomIndex];
+  }
+
+  let bestScore = -Infinity;
+  let move = null;
+
+  for (let i = 0; i < availSpots.length; i++) {
+    const idx = availSpots[i];
+    board[idx] = AI_PLAYER;
+    let score = minimax(board, 0, false);
+    board[idx] = "";
+
+    if (score > bestScore) {
+      bestScore = score;
+      move = idx;
+    }
+  }
+
+  return move;
+}
+
+function renderTTT() {
+  const cells = document.querySelectorAll('.ttt-cell');
+  cells.forEach((cell, idx) => {
+    cell.innerText = tttBoard[idx];
+  });
+}
+
+
+// EXTENDED MULTI-GAME SWITCHER
+function switchGame(gameType) {
+  const btns = document.querySelectorAll('.game-nav-btn');
+  btns.forEach(b => b.classList.remove('active'));
+
+  const allGames = ['game-ttt', 'game-coin', 'game-memory', 'game-inbox'];
+  allGames.forEach(id => {
+    const elem = document.getElementById(id);
+    if (elem) elem.classList.add('hidden');
+  });
+
+  // Clear running timers
+  if (typeof inboxGameInterval !== 'undefined' && inboxGameInterval) {
+    clearInterval(inboxGameInterval);
+  }
+
+  // Activate selected game tab
+  if (gameType === 'ttt') {
+    btns[0].classList.add('active');
+    document.getElementById('game-ttt').classList.remove('hidden');
+  } else if (gameType === 'coin') {
+    btns[1].classList.add('active');
+    document.getElementById('game-coin').classList.remove('hidden');
+  } else if (gameType === 'memory') {
+    btns[2].classList.add('active');
+    document.getElementById('game-memory').classList.remove('hidden');
+    initMemoryGame(); // Auto-shuffle on tab switch
+  } else if (gameType === 'inbox') {
+    btns[3].classList.add('active');
+    document.getElementById('game-inbox').classList.remove('hidden');
+  }
+}
+
+// GAME 3: MEMORY FLIP LOGIC
+const perkIcons = ["☕", "☕", "💻", "💻", "💸", "💸", "🍕", "🍕"];
+let flippedCards = [];
+let matchedCount = 0;
+
+function initMemoryGame() {
+  const grid = document.getElementById('memory-grid');
+  if (!grid) return;
+  grid.innerHTML = "";
+  flippedCards = [];
+  matchedCount = 0;
+
+  const shuffled = [...perkIcons].sort(() => Math.random() - 0.5);
+
+  shuffled.forEach((icon) => {
+    const card = document.createElement('button');
+    card.className = 'memory-card';
+    card.dataset.icon = icon;
+    card.innerText = "❓";
+    card.onclick = () => handleCardFlip(card);
+    grid.appendChild(card);
+  });
+}
+
+function handleCardFlip(card) {
+  if (flippedCards.length >= 2 || card.classList.contains('flipped') || card.classList.contains('matched')) return;
+
+  card.innerText = card.dataset.icon;
+  card.classList.add('flipped');
+  flippedCards.push(card);
+
+  if (flippedCards.length === 2) {
+    const [c1, c2] = flippedCards;
+    if (c1.dataset.icon === c2.dataset.icon) {
+      c1.classList.add('matched');
+      c2.classList.add('matched');
+      flippedCards = [];
+      matchedCount += 2;
+
+      if (matchedCount === perkIcons.length) {
+        if (typeof showReactionPopup === 'function') {
+          showReactionPopup("🎉 Perfect Memory! Appraisal clearance granted!", 5000);
+        }
+      }
+    } else {
+      setTimeout(() => {
+        c1.innerText = "❓";
+        c2.innerText = "❓";
+        c1.classList.remove('flipped');
+        c2.classList.remove('flipped');
+        flippedCards = [];
+      }, 600);
+    }
+  }
+}
+
+// GAME 4: INBOX CLEARER LOGIC
+let inboxScore = 0;
+let inboxGameInterval = null;
+
+function startInboxGame() {
+  inboxScore = 0;
+  const status = document.getElementById('inbox-status');
+  if (status) status.innerText = "Inbox Score: 0";
+
+  let secondsLeft = 10;
+  spawnEmailBadge();
+
+  if (inboxGameInterval) clearInterval(inboxGameInterval);
+  inboxGameInterval = setInterval(() => {
+    secondsLeft--;
+    if (secondsLeft <= 0) {
+      clearInterval(inboxGameInterval);
+      if (typeof showReactionPopup === 'function') {
+        showReactionPopup(`📧 Inbox Cleared! ${inboxScore} mails archived!`, 5000);
+      }
+    } else {
+      spawnEmailBadge();
+    }
+  }, 900);
+}
+
+function spawnEmailBadge() {
+  const container = document.getElementById('inbox-container');
+  if (!container) return;
+  container.innerHTML = "";
+
+  const badge = document.createElement('button');
+  badge.className = 'email-badge-btn';
+  badge.innerText = "📩 Unread";
+  badge.onclick = () => {
+    inboxScore++;
+    document.getElementById('inbox-status').innerText = `Inbox Score: ${inboxScore}`;
+    badge.remove();
+  };
+
+  const maxX = container.clientWidth - 75;
+  const maxY = container.clientHeight - 35;
+  badge.style.left = `${Math.max(5, Math.floor(Math.random() * maxX))}px`;
+  badge.style.top = `${Math.max(5, Math.floor(Math.random() * maxY))}px`;
+
+  container.appendChild(badge);
 }
 
 function flipCoin() {

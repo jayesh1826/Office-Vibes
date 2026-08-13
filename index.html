@@ -165,40 +165,57 @@
       </div>
 
       <!-- CALLOUT: GAMES -->
-      <div id="games-callout" class="callout-popover games-callout hidden">
-        <div class="callout-header">
-          <span>🎮 Let's Have Some Fun!</span>
-          <button class="close-modal-btn" onclick="toggleGamesCallout()">✕</button>
-        </div>
-        
-        <div class="games-nav">
-          <button onclick="switchGame('ttt')" class="game-nav-btn active">❌⭕ Tic-Tac-Toe</button>
-          <button onclick="switchGame('coin')" class="game-nav-btn">🪙 Coin Flip</button>
-        </div>
+<div id="games-callout" class="callout-popover games-callout hidden">
+  <div class="callout-header">
+    <span>🎮 Let's Have Some Fun!</span>
+    <button class="close-modal-btn" onclick="toggleGamesCallout()">✕</button>
+  </div>
+  
+  <div class="games-nav">
+    <button onclick="switchGame('ttt')" class="game-nav-btn active">❌⭕ Tic-Tac-Toe</button>
+    <button onclick="switchGame('coin')" class="game-nav-btn">🪙 Coin Flip</button>
+    <button onclick="switchGame('memory')" class="game-nav-btn">🧠 Memory Flip</button>
+    <button onclick="switchGame('inbox')" class="game-nav-btn">📩 Inbox Clearer</button>
+  </div>
 
-        <div id="game-ttt" class="game-panel">
-          <div id="ttt-status" class="game-status-text">Your turn (X)</div>
-          <div class="ttt-board">
-            <button class="ttt-cell" onclick="makeMove(0)"></button>
-            <button class="ttt-cell" onclick="makeMove(1)"></button>
-            <button class="ttt-cell" onclick="makeMove(2)"></button>
-            <button class="ttt-cell" onclick="makeMove(3)"></button>
-            <button class="ttt-cell" onclick="makeMove(4)"></button>
-            <button class="ttt-cell" onclick="makeMove(5)"></button>
-            <button class="ttt-cell" onclick="makeMove(6)"></button>
-            <button class="ttt-cell" onclick="makeMove(7)"></button>
-            <button class="ttt-cell" onclick="makeMove(8)"></button>
-          </div>
-          <button class="game-reset-btn" onclick="resetTTT()">Restart Game</button>
-        </div>
+  <!-- GAME 1: TIC-TAC-TOE -->
+  <div id="game-ttt" class="game-panel">
+    <div id="ttt-status" class="game-status-text">Your turn (X)</div>
+    <div class="ttt-board">
+      <button class="ttt-cell" onclick="makeMove(0)"></button>
+      <button class="ttt-cell" onclick="makeMove(1)"></button>
+      <button class="ttt-cell" onclick="makeMove(2)"></button>
+      <button class="ttt-cell" onclick="makeMove(3)"></button>
+      <button class="ttt-cell" onclick="makeMove(4)"></button>
+      <button class="ttt-cell" onclick="makeMove(5)"></button>
+      <button class="ttt-cell" onclick="makeMove(6)"></button>
+      <button class="ttt-cell" onclick="makeMove(7)"></button>
+      <button class="ttt-cell" onclick="makeMove(8)"></button>
+    </div>
+    <button class="game-reset-btn" onclick="resetTTT()">Restart Game</button>
+  </div>
 
-        <div id="game-coin" class="game-panel hidden">
-          <div id="coin-result" class="coin-display">🪙</div>
-          <button class="game-reset-btn" onclick="flipCoin()">Flip Coin!</button>
-        </div>
+  <!-- GAME 2: COIN FLIP -->
+  <div id="game-coin" class="game-panel hidden">
+    <div id="coin-result" class="coin-display">🪙</div>
+    <button class="game-reset-btn" onclick="flipCoin()">Flip Coin!</button>
+  </div>
 
-        <div class="callout-arrow arrow-bottom-right"></div>
-      </div>
+  <!-- GAME 3: MEMORY FLIP -->
+  <div id="game-memory" class="game-panel hidden">
+    <div id="memory-grid" class="memory-grid"></div>
+    <button class="game-reset-btn" onclick="initMemoryGame()">Reshuffle Board</button>
+  </div>
+
+  <!-- GAME 4: INBOX CLEARER -->
+  <div id="game-inbox" class="game-panel hidden">
+    <div id="inbox-status" class="game-status-text">Inbox Score: 0</div>
+    <div id="inbox-container" class="inbox-box"></div>
+    <button class="game-reset-btn" onclick="startInboxGame()">Start 10s Rush ⚡</button>
+  </div>
+
+  <div class="callout-arrow arrow-bottom-right"></div>
+</div>
 
       <div class="dock-card">
         
