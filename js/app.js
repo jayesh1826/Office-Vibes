@@ -1263,4 +1263,51 @@ function stopFocusSession() {
   if (overlay) overlay.classList.add('hidden');
 }
 
+// REAL-TIME PRESENCE SYSTEM (FIREBASE + VERCEL)
+const firebaseConfig = {
+  apiKey: "AIzaSyD2hLQyXZLDG6qR04NA3NigVwDe9WjT1Og",
+  authDomain: "office-dashboard-e8f12.firebaseapp.com",
+  databaseURL: "https://office-dashboard-e8f12-default-rtdb.firebaseio.com",
+  projectId: "office-dashboard-e8f12",
+  storageBucket: "office-dashboard-e8f12.firebasestorage.app",
+  messagingSenderId: "88533660881",
+  appId: "1:88533660881:web:f22827946e33a9c16c01f0",
+  measurementId: "G-JT7SGJB628"
+};
 
+// Initialize Firebase
+if (typeof firebase !== 'undefined' && !firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
+
+const db = firebase.database();
+
+// Track Connection Status
+const connectedRef = db.ref(".info/connected");
+const activeUsersRef = db.ref("presence/activeUsers");
+
+connectedRef.on("value", (snap) => {
+  if (snap.val() === true) {
+    // Generate a unique session key for this visitor
+    const userPresenceRef = activeUsersRef.push();
+
+    // AUTOMATIC DISCONNECT HANDLER: Removes user key when browser/tab closes
+    userPresenceRef.onDisconnect().remove();
+
+    // Mark user as online
+    userPresenceRef.set({ 
+      onlineAt: firebase.database.ServerValue.TIMESTAMP 
+    });
+  }
+});
+
+// REAL-TIME LISTENER: Updates UI with "Colleagues Joined" text
+activeUsersRef.on("value", (snapshot) => {
+  const onlineCount = snapshot.numChildren() || 0;
+  const counterElem = document.getElementById("live-user-count");
+  if (counterElem) {
+    // Displays "1 Colleague Joined" or "X Colleagues Joined"
+    const colleagueText = onlineCount === 1 ? 'Colleague' : 'Colleagues';
+    counterElem.innerText = `🟢 ${onlineCount} ${colleagueText} Joined`;
+  }
+});

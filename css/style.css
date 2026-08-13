@@ -1048,3 +1048,32 @@ body {
     filter: brightness(1.4);
   }
 }
+
+/* LIVE COLLEAGUES TRACKER BADGE */
+.live-colleague-badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;      /* 👈 Stops it from stretching full width */
+  white-space: nowrap;     /* 👈 Keeps text on a single line */
+  padding: 4px 12px;
+  background: rgba(46, 204, 113, 0.12);
+  border: 1px solid rgba(46, 204, 113, 0.35);
+  border-radius: 20px;
+  color: #2ecc71;
+  font-size: 0.82rem;
+  font-weight: 600;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 0 10px rgba(46, 204, 113, 0.15);
+  transition: all 0.3s ease;
+}
+
+.live-colleague-badge:hover {
+  background: rgba(46, 204, 113, 0.2);
+  box-shadow: 0 0 18px rgba(46, 204, 113, 0.3);
+}
+
+#live-user-count {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}

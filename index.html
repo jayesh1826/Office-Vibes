@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Office Vibes - Clear Desk Workspace</title>
   <link rel="stylesheet" href="css/style.css">
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 </head>
 <body>
 
@@ -59,11 +61,21 @@
       </div>
 
       <!-- Shift Logger Controls -->
+	
       <div class="shift-logger">
+	  <!-- LIVE COLLEAGUES TRACKER BADGE -->
+	  <div class="live-colleague-badge">
+  <span id="live-user-count">🟢 Connecting...</span>
+</div>
         <span id="shift-status-tag" class="shift-tag status-out">🔴 OFF SHIFT</span>
         <button id="shift-btn" onclick="toggleShiftLog()">⏰ Log Check-In</button>
         <button id="break-btn" class="break-btn hidden" onclick="toggleBreakLog()">☕ Take Break</button>
       </div>
+	  
+	  <!-- LIVE COLLEAGUES TRACKER BADGE -->
+
+	  
+	  
     </header>
 
     <!-- CENTER AREA -->
