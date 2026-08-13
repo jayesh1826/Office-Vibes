@@ -554,8 +554,28 @@ function onPlayerStateChange(event) {
     playIcon.innerText = '☕';
     stopProgressTracker();
   }
+  if (event.data === YT.PlayerState.ENDED) {
+    playNextTrack();
+  }
 }
 
+// FUNCTION TO ADVANCE TO THE NEXT TRACK AUTOMATICALLY
+function playNextTrack() {
+  if (typeof playlists === 'undefined' || !playlists.length) return;
+
+  // Advance index (loop back to 0 if at the end of the list)
+  currentIndex = (currentIndex + 1) % playlists.length;
+
+  // Load new track onto player
+  if (typeof loadPlaylist === 'function') {
+    loadPlaylist(currentIndex);
+  }
+
+  // Update track list UI in dossier if open
+  if (typeof renderDossierTrackList === 'function') {
+    renderDossierTrackList();
+  }
+}
 function updateDockUI(index) {
   currentIndex = index;
   const item = playlists[index];
