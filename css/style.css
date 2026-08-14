@@ -337,7 +337,7 @@ body {
   justify-content: center;
   position: relative;
   width: 100%;
-  padding: 1rem 0;
+  padding: 0rem 0;
 }
 
 .main-shift-clock {
@@ -1091,7 +1091,12 @@ body {
     max-width: 100%;
   }
 
-  .ig-link-btn,
+  .ig-link-btn
+  {
+    
+	padding: 0.10rem 0.6rem !important;
+    font-size: 0.62rem !important;
+  }
   .desk-lamp button,
   .shift-logger button,
   .live-colleague-badge {
