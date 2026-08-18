@@ -530,7 +530,7 @@ function getBestMove(board) {
 
   if (availSpots.length === 9) return 4;
 
-  const errorChance = 0.50; // 50% mistake rate
+  const errorChance = 0.10; // 10% mistake rate
   const shouldMakeMistake = Math.random() < errorChance;
 
   if (shouldMakeMistake && availSpots.length > 1) {
